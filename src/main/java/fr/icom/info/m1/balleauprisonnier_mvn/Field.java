@@ -4,7 +4,9 @@ package fr.icom.info.m1.balleauprisonnier_mvn;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import javafx.animation.AnimationTimer;
 import javafx.event.EventHandler;
 import javafx.scene.Group;
@@ -26,6 +28,9 @@ public class Field extends Canvas {
 	String[] colorMap = new String[] {"blue", "green", "orange", "purple", "yellow"};
 	/** Tableau traçant les evenements */
 	ArrayList<String> input = new ArrayList<>();
+
+	Projectile ball;
+
 
 
 	final GraphicsContext gc;
@@ -57,20 +62,43 @@ public class Field extends Canvas {
 		this.setFocusTraversable(true);
 
 		gc = this.getGraphicsContext2D();
+		ball = Projectile.Instantiate(gc,
+//				ThreadLocalRandom.current().nextInt(0, 180),
+				45,
+				5,
+				0,
+				this.height / 2
+		);
+
 
 		// On initialise le terrain de jeu
 		double ms = 2;
 
 		heightTeam1 = h - 64 - 20;
 		heightTeam2 = 20;
+		List<Boolean> idHum = new ArrayList<>();
+		idHum.add(false);
+		idHum.add(true);
+		idHum.add(false);
 
 		for (int i = 0; i < Const.NB_EQ1; i++) {
-			equipe1.add(new Human(
+			Player p;
+			if(idHum.get(i)) {
+				p = new Human(
 					gc, colorMap[0],
 					( w * ( i + 1 ))
 							/
 							( Const.NB_EQ1 + 1 ),
-					heightTeam1, "bottom", ms));
+					heightTeam1, "bottom", ms);
+			} else {
+				p = new IA(
+						gc, colorMap[0],
+					( w * ( i + 1 ))
+								/
+						( Const.NB_EQ1 + 1 ),
+						heightTeam1, "bottom", ms);
+			}
+			equipe1.add(p);
 			equipe1.get(i).display();
 		}
 
@@ -80,9 +108,11 @@ public class Field extends Canvas {
 					( w * ( i + 1 ))
 							/
 							( Const.NB_EQ2 + 1 ),
-					heightTeam2, "top", ms, equipe1));
+					heightTeam2, "top", ms));
 			equipe2.get(i).display();
 		}
+
+        setIAEnnemies();
 
 		/*
 		 Event Listener du clavier
@@ -129,56 +159,77 @@ public class Field extends Canvas {
 		}.start(); // On lance la boucle de rafraichissement
 
 	}
-	private void check(List<Player> emetteur, List<Player> recepteur) {
-		for (Player em : emetteur) {
-			List<Projectile> toRemove = new ArrayList<>();
-			for(Projectile p : em.getListProjectiles()) {
-				List<Player> toKill = new ArrayList<>();
-				for (Player rec : recepteur)
-				{
-					if(!rec.isAlive) continue;
-					if(rectangleOverlap(
-							new Point(
-									(int) (p.getX() - (p.getWidth() / 2)),
-									(int) (p.getY() - (p.getHeight() / 2))
-							),
-							new Point(
-									(int) (p.getX() + (p.getWidth() / 2)),
-									(int) (p.getY() + (p.getHeight() / 2))
-							),
-							new Point(
-									(int) (rec.getCenterX() - (rec.width / 2)),
-									(int) (rec.getCenterY() - (rec.height / 2))
-							),
-							new Point(
-									(int) (rec.getCenterX() + (rec.width / 2)),
-									(int) (rec.getCenterY() + (rec.height / 2))
-							)
-					)) {
-						toKill.add(rec);
-					}
-				}
 
-				for (Player player : toKill) {
-					player.kill();
-					toRemove.add(p);
-				}
+    private void setIAEnnemies() {
+        for(Player p : equipe1) {
+            if(p.getClass() == IA.class) {
+                ((IA) p).setEnnemies(equipe2);
+            }
+        }
+        for(Player p : equipe2) {
+            if(p.getClass() == IA.class) {
+                ((IA) p).setEnnemies(equipe1);
+            }
+        }
+    }
 
-				if(p.getY() <= 0 && p.getX() <= 0 && p.getX() >= width) {
-					if(!toRemove.contains(p))
-						toRemove.add(p);
+    private void generatePlayers() {
+
+	}
+
+	private int equipeBall;
+
+	private void check(List<Player> recepteur, int numEquipe) {
+		if(numEquipe == equipeBall) return;
+		List<Player> toKill = new ArrayList<>();
+		for (Player rec : recepteur)
+		{
+			if(!rec.isAlive) continue;
+			if(rectangleOverlap(
+					new Point(
+							(int) (ball.getX() - (ball.getWidth() / 2)),
+							(int) (ball.getY() - (ball.getHeight() / 2))
+					),
+					new Point(
+							(int) (ball.getX() + (ball.getWidth() / 2)),
+							(int) (ball.getY() + (ball.getHeight() / 2))
+					),
+					new Point(
+							(int) (rec.getCenterX() - (rec.width / 2)),
+							(int) (rec.getCenterY() - (rec.height / 2))
+					),
+					new Point(
+							(int) (rec.getCenterX() + (rec.width / 2)),
+							(int) (rec.getCenterY() + (rec.height / 2))
+					)
+			)) {
+				if(ball.getStatic()) {
+					ball.setMoving(false);
+					rec.setHasBall(ball);
+					ball.setHolder(rec);
+					equipeBall = numEquipe;
+				} else {
+					toKill.add(rec);
 				}
 			}
+		}
 
-			for(Projectile p : toRemove) {
-				em.getListProjectiles().remove(p);
-			}
+		for (Player player : toKill) {
+			player.kill();
 		}
 
 	}
 	private void checkCollision() {
-		check(this.equipe1, this.equipe2);
-		check(this.equipe2, this.equipe1);
+		if((ball.getY() <= 50 || ball.getY() >= Const.FIELD_DIM.height - 50) && !ball.isMoving()) {
+			if(ball.getY() <= 50) ball.setStatic(true, 1);
+			else if(ball.getY() >= Const.FIELD_DIM.height - 50) ball.setStatic(true, 2);
+		}
+		if(ball.getY() >= (Const.FIELD_DIM.height / 2) - 10 && ball.getY() <= (Const.FIELD_DIM.height / 2) + 10) {
+			ball.setMoving(false);
+		}
+
+		check(this.equipe1, 1);
+		check(this.equipe2, 2);
 	}
 
 	private boolean rectangleOverlap(Point l1, Point r1, Point l2, Point r2) {
@@ -203,6 +254,8 @@ public class Field extends Canvas {
 		for (Player p : equipe2) {
 			p.Animate(input, equipe2.indexOf(p));
 		}
+
+		ball.display();
 	}
 
 	public List<Player> getEquipe1() {

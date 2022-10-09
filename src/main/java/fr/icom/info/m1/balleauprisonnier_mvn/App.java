@@ -31,6 +31,7 @@ public class App extends Application
 
 		// On cree le terrain de jeu et on l'ajoute a la racine de la scene
 		Field gameField = new Field(scene, Const.FIELD_DIM.width, Const.FIELD_DIM.height, root);
+
 		root.getChildren().add( gameField );
 
 		for(Player p : gameField.getEquipe1()) {

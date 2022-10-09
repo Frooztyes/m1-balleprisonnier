@@ -15,15 +15,15 @@ import java.util.Objects;
  */
 public abstract class Player
 {
+	protected Projectile ball;
 	protected double width; 		// largeur du joueur
 	protected double height; 		// hauteur du joueur
 	protected boolean isAlive;		// défini l'état vivant = true ou mort = false du joueur
 	protected double x;       		// position horizontale du joueur
 	protected final double y; 	  	// position verticale du joueur
-	protected double angle; 	// rotation du joueur, devrait toujour être en 0 et 180
+	protected double angle; 	// rotation du joueur, devrait toujours être en 0 et 180
 	protected double step;    		// pas d'un joueur lors d'un déplacement
 	protected String playerColor;	// ...
-	protected List<Projectile> listProjectiles = new ArrayList<>();
 	// Liste de projectiles lancé par le joueur
 	protected double projectileSpeed = 5;
 	// vitesse du projectile
@@ -37,7 +37,7 @@ public abstract class Player
 	protected Image directionProjectile;
 	//
 
-	private boolean shooted = false;
+	protected int side;
 
 	Player(GraphicsContext gc, String color, int xInit, int yInit, String side, double moveSpeed)
 	{
@@ -51,12 +51,12 @@ public abstract class Player
 
 		// On charge la representation du joueur
 		if(Objects.equals(side, "top")){
+			this.side = 1;
 			directionArrow = new Image("assets/PlayerArrowDown.png");
-			directionProjectile = new Image("assets/ProjectileDown.png");
 		}
 		else{
+			this.side = 2;
 			directionArrow = new Image("assets/PlayerArrowUp.png");
-			directionProjectile = new Image("assets/ProjectileUp.png");
 		}
 
 		PlayerDirectionArrow = new ImageView();
@@ -68,8 +68,8 @@ public abstract class Player
 
 		Image tilesheetImage = new Image("assets/orc.png");
 		sprite = new Sprite(tilesheetImage, 0,0, Duration.seconds(.2), side);
-		this.width = sprite.getCellSize();
-		this.height = sprite.getCellSize();
+		this.width = sprite.getCellSize() / 2;
+		this.height = sprite.getCellSize() / 2;
 		sprite.setX(x);
 		sprite.setY(y);
 
@@ -82,6 +82,7 @@ public abstract class Player
 	 */
 	public void display()
 	{
+		if(ball == null) return;
 		graphicsContext.save(); // saves the current state on stack, including the current transform
 		rotate(graphicsContext, angle, x + directionArrow.getWidth() / 2, y + directionArrow.getHeight() / 2);
 		graphicsContext.drawImage(directionArrow, x, y);
@@ -152,12 +153,9 @@ public abstract class Player
 		}
 	}
 	public void shoot(){
-		if(shooted) return;
+		if(ball == null) return;
 //		shooted = !shooted;
 		sprite.playShoot();
-		Projectile p = new Projectile(graphicsContext, angle, projectileSpeed, getCenterX(), getCenterY(), directionProjectile);
-		p.display();
-		listProjectiles.add(p);
 	}
 
 	public void kill() {
@@ -183,10 +181,6 @@ public abstract class Player
 		sprite.setY(y);
 	}
 
-	public List<Projectile> getListProjectiles() {
-		return listProjectiles;
-	}
-
 	public double getX() {
 		return x;
 	}
@@ -204,4 +198,10 @@ public abstract class Player
 	}
 
 	public void Animate(ArrayList<String> input, int indice) { }
+
+	public void setHasBall(Projectile ball) {
+		this.ball = ball;
+	}
+
+	public Projectile getHasBall() { return ball; }
 }

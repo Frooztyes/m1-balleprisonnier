@@ -12,9 +12,6 @@ public class Human extends Player {
 
     public void Animate(ArrayList<String> input, int indice) {
         if(!this.isAlive) return;
-        for(Projectile p : this.getListProjectiles()) {
-            p.display();
-        }
 
         if (indice==0 && input.contains("LEFT"))
         {

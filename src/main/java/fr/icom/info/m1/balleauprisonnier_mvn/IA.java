@@ -21,15 +21,18 @@ public class IA extends Player {
     private double angleToGet;
     private double precision;
 
-    IA(GraphicsContext gc, String color, int xInit, int yInit, String side, double moveSpeed, List<Player> human) {
+
+    IA(GraphicsContext gc, String color, int xInit, int yInit, String side, double moveSpeed) {
         super(gc, color, xInit, yInit, side, moveSpeed);
         this.cooldownMove = CD_MOVE;
         this.cooldownShoot = ThreadLocalRandom.current().nextInt(CD_SHOOT_MAX - CD_SHOOT_MAX_OFFSET, CD_SHOOT_MAX + CD_SHOOT_MAX_OFFSET);
-        this.ennemies = human;
         this.projectileSpeed = -projectileSpeed;
         this.precision = 0.85;
     }
 
+    public void setEnnemies(List<Player> ennemies) {
+        this.ennemies = ennemies;
+    }
 
     /**
      * Donne l'endroit où il y a le plus d'adversaires en vie
@@ -122,9 +125,16 @@ public class IA extends Player {
         } else {
             canShoot = true;
         }
+        double delta_x;
+        double delta_y;
+        if(side == 1) {
+            delta_x = this.getCenterX() - middle.x;
+            delta_y = this.getCenterY() - middle.y;
+        } else {
+            delta_x =  middle.x - this.getCenterX();
+            delta_y =  middle.y - this.getCenterY();
+        }
 
-        double delta_x = this.getCenterX() - middle.x;
-        double delta_y = this.getCenterY() - middle.y;
         // calcul de l'angle entre le point à atteindre et sois même
         double deg = (Math.atan2(delta_x, -delta_y) * 180) / Math.PI;
         // ajout d'imprécision
@@ -139,55 +149,82 @@ public class IA extends Player {
     }
 
     public void Animate(ArrayList<String> input, int indice) {
-        for(Projectile p : this.getListProjectiles()) {
-            p.display();
-        }
-
         if(this.isAlive) {
             this.move();
+            // si peut tirer, alors tire
+            if(ball != null) {
+                System.out.println(angleToGet);
+                prepareShot();
+            }
             this.display();
         }
     }
 
-    public void move() {
-        if(canMove) {
-            if(dir) {
-                moveLeft();
-            } else {
-                moveRight();
+    public void prepareShot() {
+        cooldownShoot--;
+        if(angle != angleToGet) {
+            if(Math.abs(angleToGet - angle) < 1) {
+                angle = angleToGet;
             }
-            cooldownMove--;
+
+            if(angleToGet < angle) {
+                turnRight();
+            } else if(angleToGet > angle) {
+                turnLeft();
+            }
+        }
+        if(cooldownShoot <= 0 && canShoot) {
+            if(angle == angleToGet) {
+                ball.setStatic(false);
+                ball.setMoving(true);
+                cooldownShoot = ThreadLocalRandom.current().nextInt(CD_SHOOT_MAX - CD_SHOOT_MAX_OFFSET, CD_SHOOT_MAX + CD_SHOOT_MAX_OFFSET);
+                ball.setAngle(angle);
+                ball.setSpeed(-ball.getSpeed());
+                shoot();
+                ball.setHolder(null);
+                ball = null;
+            }
+        }
+    }
+
+    private void goToBall() {
+        if(Projectile.getInstance().getX() < this.x) {
+            moveLeft();
+        } else if(Projectile.getInstance().getX() > this.x){
+            moveRight();
+        }
+    }
+
+
+    public void move() {
+
+        if(canMove) {
+            if(this.side == Projectile.getInstance().getTeamField() && Projectile.getInstance().getHolder() == null) {
+                goToBall();
+            } else {
+                if(dir) {
+                    moveLeft();
+                } else {
+                    moveRight();
+                }
+                cooldownMove--;
+            }
             angleToGet = calculateAngle();
         }
-        cooldownShoot--;
+
+
 
         // calcul de la prochaine direction où l'ia ira.
         if(cooldownMove <= 0) {
             cooldownMove = CD_MOVE;
             dir = ThreadLocalRandom.current().nextFloat() < 0.5;
         }
+    }
 
-        if(cooldownShoot <= 0 && canShoot) {
-            // fait pivoter la flêche de viser jusqu'a atteindre la position où l'ia doit tirer
-            if(angle != angleToGet) {
-                canMove = false;
-
-                if(Math.abs(angleToGet - angle) < 1) {
-                    angle = angleToGet;
-                }
-
-                if(angleToGet < angle) {
-                    turnRight();
-                } else if(angleToGet > angle) {
-                    turnLeft();
-                }
-
-            } else {
-                canMove = true;
-                cooldownShoot = ThreadLocalRandom.current().nextInt(CD_SHOOT_MAX - CD_SHOOT_MAX_OFFSET, CD_SHOOT_MAX + CD_SHOOT_MAX_OFFSET);
-                shoot();
-            }
-        }
+    public void setHasBall(Projectile ball) {
+        this.ball = ball;
+        System.out.println("J'ai la balle ");
+        cooldownShoot = ThreadLocalRandom.current().nextInt(CD_SHOOT_MAX - CD_SHOOT_MAX_OFFSET, CD_SHOOT_MAX + CD_SHOOT_MAX_OFFSET);
 
     }
 }
