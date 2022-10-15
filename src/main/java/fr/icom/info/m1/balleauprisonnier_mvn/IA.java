@@ -127,7 +127,7 @@ public class IA extends Player {
         }
         double delta_x;
         double delta_y;
-        if(side == 1) {
+        if(side == Const.SIDE_TOP) {
             delta_x = this.getCenterX() - middle.x;
             delta_y = this.getCenterY() - middle.y;
         } else {
@@ -138,14 +138,20 @@ public class IA extends Player {
         // calcul de l'angle entre le point à atteindre et sois même
         double deg = (Math.atan2(delta_x, -delta_y) * 180) / Math.PI;
         // ajout d'imprécision
-        double un_deg = deg * precision;
-        if(((int) (deg - un_deg)) > (((int) (deg + un_deg)))) {
-            deg = ThreadLocalRandom.current().nextInt((int) (deg + un_deg), (int) (deg - un_deg));
-        } else if(((int) (deg - un_deg)) < (((int) (deg + un_deg)))) {
-            deg = ThreadLocalRandom.current().nextInt((int) (deg - un_deg), (int) (deg + un_deg));
+//        double un_deg = deg * precision;
+//        if(((int) (deg - un_deg)) > (((int) (deg + un_deg)))) {
+//            deg = ThreadLocalRandom.current().nextInt((int) (deg + un_deg), (int) (deg - un_deg));
+//        } else if(((int) (deg - un_deg)) < (((int) (deg + un_deg)))) {
+//            deg = ThreadLocalRandom.current().nextInt((int) (deg - un_deg), (int) (deg + un_deg));
+//        }
+        if(deg < 0) {
+            deg = 360 - deg;
+            deg = deg % 360;
+            if(deg > 180) deg = deg - 180;
+            else deg = 360 - deg;
         }
 
-        return deg;
+        return (int) deg;
     }
 
     public void Animate(ArrayList<String> input, int indice) {
@@ -153,11 +159,15 @@ public class IA extends Player {
             this.move();
             // si peut tirer, alors tire
             if(ball != null) {
-                System.out.println(angleToGet);
                 prepareShot();
             }
             this.display();
         }
+    }
+
+    public static double fmod(double a, double b) {
+        int result = (int) Math.floor(a / b);
+        return a - result * b;
     }
 
     public void prepareShot() {
@@ -166,22 +176,28 @@ public class IA extends Player {
             if(Math.abs(angleToGet - angle) < 1) {
                 angle = angleToGet;
             }
-
-            if(angleToGet < angle) {
-                turnRight();
-            } else if(angleToGet > angle) {
-                turnLeft();
+            if(Math.abs(angle - angleToGet) < 180) {
+                if(angleToGet < angle) {
+                    turnRight();
+                } else if(angleToGet > angle) {
+                    turnLeft();
+                }
+            } else {
+                if(angleToGet < angle) {
+                    turnLeft();
+                } else if(angleToGet > angle) {
+                    turnRight();
+                }
             }
+
+
+//
         }
         if(cooldownShoot <= 0 && canShoot) {
             if(angle == angleToGet) {
-                ball.setStatic(false);
-                ball.setMoving(true);
                 cooldownShoot = ThreadLocalRandom.current().nextInt(CD_SHOOT_MAX - CD_SHOOT_MAX_OFFSET, CD_SHOOT_MAX + CD_SHOOT_MAX_OFFSET);
-                ball.setAngle(angle);
-                ball.setSpeed(-ball.getSpeed());
+                ball.send(angle, this.side);
                 shoot();
-                ball.setHolder(null);
                 ball = null;
             }
         }
@@ -195,12 +211,43 @@ public class IA extends Player {
         }
     }
 
+    private void dodgeBall() {
+        // f(x) = ax + b = teamHeight
+        int heightToGet;
+        int speed;
+        if(this.side == Const.SIDE_BOT) {
+            heightToGet = Const.HEIGHT_EQ1;
+            speed = 1;
+        } else {
+            speed = -1;
+            heightToGet = Const.HEIGHT_EQ2;
+        }
+
+        double theta = Math.toDegrees(
+                Math.atan2(Projectile.getInstance().getvX(), -Projectile.getInstance().getvY())
+        );
+        Projectile ball = Projectile.getInstance();
+        if(ball.getSpeed() < 0) return;
+        // triangle
+
+        // a = heightToGet
+        double a = Math.abs(heightToGet - ball.getY());
+        double beta = 90 - Math.abs(ball.getAngle());
+
+        double b = a * Math.tan(beta);
+
+//        System.out.println(ball.getX() + " ; " + this.getCenterX() + " ; " + b);
+
+    }
+
 
     public void move() {
 
         if(canMove) {
-            if(this.side == Projectile.getInstance().getTeamField() && Projectile.getInstance().getHolder() == null) {
+            if(Projectile.getInstance().getStatic() && this.side == Projectile.getInstance().getTeamField() && Projectile.getInstance().getHolder() == null) {
                 goToBall();
+            } else if(!Projectile.getInstance().getStatic()) {
+                dodgeBall();
             } else {
                 if(dir) {
                     moveLeft();
@@ -223,7 +270,6 @@ public class IA extends Player {
 
     public void setHasBall(Projectile ball) {
         this.ball = ball;
-        System.out.println("J'ai la balle ");
         cooldownShoot = ThreadLocalRandom.current().nextInt(CD_SHOOT_MAX - CD_SHOOT_MAX_OFFSET, CD_SHOOT_MAX + CD_SHOOT_MAX_OFFSET);
 
     }

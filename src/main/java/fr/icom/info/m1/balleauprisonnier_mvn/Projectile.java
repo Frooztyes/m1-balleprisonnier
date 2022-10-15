@@ -4,6 +4,9 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.transform.Rotate;
 
+import java.awt.*;
+import java.util.Vector;
+
 public class Projectile {
 
     private int teamField;
@@ -31,6 +34,11 @@ public class Projectile {
         this.y = y - height/2;
         isStatic = false;
         rotation = 0;
+
+
+        double radAngle = Math.toRadians(angle);
+        vY = -Math.cos(radAngle);
+        vX = Math.sin(radAngle);
     }
 
     private static Projectile instance;
@@ -51,23 +59,34 @@ public class Projectile {
         move();
         graphicsContext.save(); // saves the current state on stack, including the current transform
         rotate(graphicsContext, angle, x + arrowSprite.getWidth() / 2, y + arrowSprite.getHeight() / 2);
-        if(!isStatic) rotation += 5;
+        if(!isStatic && holder == null) rotation += 5;
         if(rotation >= 360) rotation = 0;
         graphicsContext.drawImage(arrowSprite, x, y);
         graphicsContext.restore(); // back to original state (before rotation)
     }
+    private double vX;
+    private double vY;
+
+    public void send(double angle, int sideSender) {
+        if(holder == null) return;
+
+        double radAngle = Math.toRadians(angle);
+        this.angle = angle;
+        vY = -Math.cos(radAngle);
+        vX = Math.sin(radAngle);
+        this.setMoving(true, sideSender);
+        this.speed = -this.speed;
+        this.holder = null;
+    }
 
     void move() {
         if(holder != null) {
-            x = holder.getCenterX();
-            y = holder.getCenterY();
+            x = holder.getCenterX() - this.width/2;
+            y = holder.getCenterY() - this.height/2;
         } else {
             if(isStatic) return;
-            double radAngle =  Math.toRadians(angle);
-            double vX = -Math.cos(radAngle);
-            double vY = Math.sin(radAngle);
-            x += vY * speed;
-            y += vX * speed;
+            x += vX * speed;
+            y += vY * speed;
         }
     }
 
@@ -78,7 +97,6 @@ public class Projectile {
 
     public void setStatic(boolean status) {
         this.isStatic = status;
-        angle = 0;
         teamField = 0;
     }
 
@@ -97,7 +115,7 @@ public class Projectile {
     }
 
     public double getX() {
-        return x + width/2;
+        return x - width/2;
     }
 
     public double getY() {
@@ -141,5 +159,19 @@ public class Projectile {
 
     public void setMoving(boolean moving) {
         isMoving = moving;
+        teamField = 0;
+    }
+    public void setMoving(boolean moving, int position) {
+        this.setStatic(!moving);
+        this.setMoving(moving);
+        teamField = position;
+    }
+
+    public double getvX() {
+        return vX;
+    }
+
+    public double getvY() {
+        return vY;
     }
 }

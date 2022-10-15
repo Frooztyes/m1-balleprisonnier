@@ -16,6 +16,8 @@ import java.util.Objects;
 public abstract class Player
 {
 	protected Projectile ball;
+
+	protected boolean hasBall;
 	protected double width; 		// largeur du joueur
 	protected double height; 		// hauteur du joueur
 	protected boolean isAlive;		// défini l'état vivant = true ou mort = false du joueur
@@ -42,8 +44,6 @@ public abstract class Player
 	Player(GraphicsContext gc, String color, int xInit, int yInit, String side, double moveSpeed)
 	{
 		// Tous les joueurs commencent au centre du canvas,
-		this.x = xInit;
-		this.y = yInit;
 		this.graphicsContext = gc;
 		this.playerColor=color;
 
@@ -51,11 +51,11 @@ public abstract class Player
 
 		// On charge la representation du joueur
 		if(Objects.equals(side, "top")){
-			this.side = 1;
+			this.side = Const.SIDE_TOP;
 			directionArrow = new Image("assets/PlayerArrowDown.png");
 		}
 		else{
-			this.side = 2;
+			this.side = Const.SIDE_BOT;
 			directionArrow = new Image("assets/PlayerArrowUp.png");
 		}
 
@@ -68,8 +68,12 @@ public abstract class Player
 
 		Image tilesheetImage = new Image("assets/orc.png");
 		sprite = new Sprite(tilesheetImage, 0,0, Duration.seconds(.2), side);
-		this.width = sprite.getCellSize() / 2;
-		this.height = sprite.getCellSize() / 2;
+		this.width = sprite.getCellSize();
+		this.height = sprite.getCellSize();
+
+		this.x = xInit - width/2;
+		this.y = yInit - height/2;
+
 		sprite.setX(x);
 		sprite.setY(y);
 
@@ -84,8 +88,14 @@ public abstract class Player
 	{
 		if(ball == null) return;
 		graphicsContext.save(); // saves the current state on stack, including the current transform
-		rotate(graphicsContext, angle, x + directionArrow.getWidth() / 2, y + directionArrow.getHeight() / 2);
-		graphicsContext.drawImage(directionArrow, x, y);
+		if(this.side == Const.SIDE_BOT) {
+			rotate(graphicsContext, angle, x + directionArrow.getWidth() / 2, this.getCenterY());
+			graphicsContext.drawImage(directionArrow, x, y - this.width/2);
+		}
+		else {
+			rotate(graphicsContext, angle, x + directionArrow.getWidth() / 2, this.getCenterY() + this.width/2);
+			graphicsContext.drawImage(directionArrow, x, y);
+		}
 		graphicsContext.restore(); // back to original state (before rotation)
 	}
 
@@ -99,13 +109,11 @@ public abstract class Player
 	 */
 	public void moveLeft()
 	{
-		if ((this.x + this.width) >= Const.OFFSET_FIELD)
-		{
-			spriteAnimate();
+		if (this.getCenterX() - this.width/2 >= Const.OFFSET_FIELD)
 			x -= step;
-		} else {
-			x = Const.OFFSET_FIELD - this.width;
-		}
+		else
+			x = Const.OFFSET_FIELD;
+		spriteAnimate();
 	}
 
 	/**
@@ -113,13 +121,11 @@ public abstract class Player
 	 */
 	public void moveRight()
 	{
-		if (x <= Const.FIELD_DIM.width - Const.OFFSET_FIELD)
-		{
-			spriteAnimate();
+		if (this.getCenterX() + this.width/2 <= Const.FIELD_DIM.width - Const.OFFSET_FIELD)
 			x += step;
-		} else {
-			x = Const.FIELD_DIM.width - Const.OFFSET_FIELD;
-		}
+		else
+			x = Const.FIELD_DIM.width - Const.OFFSET_FIELD - width;
+		spriteAnimate();
 	}
 
 
@@ -128,12 +134,16 @@ public abstract class Player
 	 */
 	public void turnLeft()
 	{
-		if (angle > 0 && angle < 180)
-		{
-			angle += 1;
-		}
-		else {
-			angle += 1;
+		if(angle < 0) angle = 360 + angle;
+		angle = angle % 360;
+		if(this.side == Const.SIDE_BOT) {
+			if(angle > 270 || angle < 90) angle += 1;
+			else if(angle == 270) angle = 271;
+			else angle = 89;
+		} else {
+			if(angle < 270 || angle > 90) angle += 1;
+			else if(angle == 270) angle = 269;
+			else angle = 91;
 		}
 
 	}
@@ -144,17 +154,19 @@ public abstract class Player
 	 */
 	public void turnRight()
 	{
-		if (angle > 0 && angle < 180)
-		{
-			angle -=1;
-		}
-		else {
-			angle -= 1;
+		if(angle < 0) angle = 360 + angle;
+		angle = angle % 360;
+		if(this.side == Const.SIDE_BOT) {
+			if(angle > 270 || angle < 90) angle -= 1;
+			else if(angle == 270) angle = 271;
+			else angle = 89;
+		} else {
+			if(angle < 270 || angle > 90) angle -= 1;
+			else if(angle == 270) angle = 269;
+			else angle = 91;
 		}
 	}
-	public void shoot(){
-		if(ball == null) return;
-//		shooted = !shooted;
+	public void shoot() {
 		sprite.playShoot();
 	}
 
@@ -163,7 +175,6 @@ public abstract class Player
 			isAlive = false;
 			sprite.playDie();
 		}
-
 	}
 	/**
 	 *  Deplacement en mode boost
@@ -204,4 +215,8 @@ public abstract class Player
 	}
 
 	public Projectile getHasBall() { return ball; }
+
+	public boolean hasBall() {
+		return hasBall;
+	}
 }

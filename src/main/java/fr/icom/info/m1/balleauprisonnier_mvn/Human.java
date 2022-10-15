@@ -3,11 +3,20 @@ package fr.icom.info.m1.balleauprisonnier_mvn;
 import javafx.scene.canvas.GraphicsContext;
 
 import java.util.ArrayList;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Human extends Player {
 
     Human(GraphicsContext gc, String color, int xInit, int yInit, String side, double moveSpeed) {
         super(gc, color, xInit, yInit, side, moveSpeed);
+    }
+
+    @Override
+    public void shoot() {
+        if(ball == null) return;
+        ball.send(angle, this.side);
+        ball = null;
+        sprite.playShoot();
     }
 
     public void Animate(ArrayList<String> input, int indice) {

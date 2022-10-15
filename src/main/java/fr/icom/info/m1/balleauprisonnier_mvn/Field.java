@@ -64,22 +64,22 @@ public class Field extends Canvas {
 		gc = this.getGraphicsContext2D();
 		ball = Projectile.Instantiate(gc,
 //				ThreadLocalRandom.current().nextInt(0, 180),
-				45,
-				5,
 				0,
-				this.height / 2
+				5,
+				Const.FIELD_DIM.width / 2 - 100,
+				Const.FIELD_DIM.height / 2
 		);
 
 
 		// On initialise le terrain de jeu
 		double ms = 2;
 
-		heightTeam1 = h - 64 - 20;
-		heightTeam2 = 20;
+		heightTeam1 = Const.HEIGHT_EQ1;
+		heightTeam2 = Const.HEIGHT_EQ2;
 		List<Boolean> idHum = new ArrayList<>();
 		idHum.add(false);
-		idHum.add(true);
 		idHum.add(false);
+//		idHum.add(false);
 
 		for (int i = 0; i < Const.NB_EQ1; i++) {
 			Player p;
@@ -220,9 +220,9 @@ public class Field extends Canvas {
 
 	}
 	private void checkCollision() {
-		if((ball.getY() <= 50 || ball.getY() >= Const.FIELD_DIM.height - 50) && !ball.isMoving()) {
-			if(ball.getY() <= 50) ball.setStatic(true, 1);
-			else if(ball.getY() >= Const.FIELD_DIM.height - 50) ball.setStatic(true, 2);
+		if(!ball.isMoving()) {
+			if(ball.getY() <= Const.HEIGHT_EQ2) ball.setStatic(true, Const.SIDE_TOP);
+			else if(ball.getY() >= Const.HEIGHT_EQ1) ball.setStatic(true, Const.SIDE_BOT);
 		}
 		if(ball.getY() >= (Const.FIELD_DIM.height / 2) - 10 && ball.getY() <= (Const.FIELD_DIM.height / 2) + 10) {
 			ball.setMoving(false);
