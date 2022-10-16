@@ -22,7 +22,7 @@ public class IA extends Player {
     private double precision;
 
 
-    IA(GraphicsContext gc, String color, int xInit, int yInit, String side, double moveSpeed) {
+    IA(GraphicsContext gc, String color, int xInit, int yInit, int side, double moveSpeed) {
         super(gc, color, xInit, yInit, side, moveSpeed);
         this.cooldownMove = CD_MOVE;
         this.cooldownShoot = ThreadLocalRandom.current().nextInt(CD_SHOOT_MAX - CD_SHOOT_MAX_OFFSET, CD_SHOOT_MAX + CD_SHOOT_MAX_OFFSET);
@@ -41,8 +41,8 @@ public class IA extends Player {
     private int getInterestCoef(List<Player> alive) {
         int n = 0;
         for(Player p : alive) {
-            if(this.getCenterX() > p.getCenterX()) n++;
-            else if(this.getCenterX() < p.getCenterX()) n--;
+            if(this.getX() > p.getX()) n++;
+            else if(this.getX() < p.getX()) n--;
         }
         return n;
     }
@@ -75,8 +75,8 @@ public class IA extends Player {
         // un seul adversaire en vie
         if(alives.size() == 1)
             return new Point(
-                    (int)alives.get(0).getCenterX(),
-                    (int)alives.get(0).getCenterY()
+                    (int)alives.get(0).getX(),
+                    (int)alives.get(0).getY()
             );
         else if(alives.size()  == 0) return null;
 
@@ -85,27 +85,27 @@ public class IA extends Player {
             // dans le cas où il y a autant d'adversaires de chaque côté
             // on prends un adversaire aléatoire à viser
             int randomNum = ThreadLocalRandom.current().nextInt(0, alives.size());
-            return new Point((int) alives.get(randomNum).getCenterX(), (int) alives.get(randomNum).getCenterY());
+            return new Point((int) alives.get(randomNum).getX(), (int) alives.get(randomNum).getY());
         } else {
             // on prends la position moyenne des adversaires
             int cpt = 0;
             for(Player p : alives) {
                 if(getInterestCoef(alives) > 0) {
                     // on ignore ceux à gauche
-                    if(this.getCenterX() < p.getCenterX()) continue;
+                    if(this.getX() < p.getX()) continue;
                 } else if(getInterestCoef(alives) < 0) {
                     // on ignore ceux à droite
-                    if(this.getCenterX() > p.getCenterX()) continue;
+                    if(this.getX() > p.getX()) continue;
                 }
                 if(x == -1) {
-                    x = p.getCenterX();
+                    x = p.getX();
                 } else {
-                    x += p.getCenterX();
+                    x += p.getX();
                 }
                 if(y == -1) {
-                    y = p.getCenterY();
+                    y = p.getY();
                 } else {
-                    y += p.getCenterY();
+                    y += p.getY();
                 }
                 cpt += 1;
             }
@@ -128,11 +128,11 @@ public class IA extends Player {
         double delta_x;
         double delta_y;
         if(side == Const.SIDE_TOP) {
-            delta_x = this.getCenterX() - middle.x;
-            delta_y = this.getCenterY() - middle.y;
+            delta_x = this.getX() - middle.x;
+            delta_y = this.getY() - middle.y;
         } else {
-            delta_x =  middle.x - this.getCenterX();
-            delta_y =  middle.y - this.getCenterY();
+            delta_x =  middle.x - this.getX();
+            delta_y =  middle.y - this.getY();
         }
 
         // calcul de l'angle entre le point à atteindre et sois même
@@ -165,10 +165,6 @@ public class IA extends Player {
         }
     }
 
-    public static double fmod(double a, double b) {
-        int result = (int) Math.floor(a / b);
-        return a - result * b;
-    }
 
     public void prepareShot() {
         cooldownShoot--;
@@ -211,32 +207,46 @@ public class IA extends Player {
         }
     }
 
+    public static double roundAvoid(double value, int places) {
+        double scale = Math.pow(10, places);
+        return Math.round(value * scale) / scale;
+    }
+
     private void dodgeBall() {
         // f(x) = ax + b = teamHeight
         int heightToGet;
-        int speed;
+        int direction;
         if(this.side == Const.SIDE_BOT) {
             heightToGet = Const.HEIGHT_EQ1;
-            speed = 1;
         } else {
-            speed = -1;
             heightToGet = Const.HEIGHT_EQ2;
         }
-
-        double theta = Math.toDegrees(
-                Math.atan2(Projectile.getInstance().getvX(), -Projectile.getInstance().getvY())
-        );
         Projectile ball = Projectile.getInstance();
-        if(ball.getSpeed() < 0) return;
-        // triangle
 
-        // a = heightToGet
-        double a = Math.abs(heightToGet - ball.getY());
-        double beta = 90 - Math.abs(ball.getAngle());
+        double xA = ball.getX();
+        double yA = ball.getY();
 
-        double b = a * Math.tan(beta);
 
-//        System.out.println(ball.getX() + " ; " + this.getCenterX() + " ; " + b);
+        double vX = ball.getvX();
+        double vY = ball.getvY();
+//        System.out.println(roundAvoid(vX, 3) + ";" +  roundAvoid(vY, 3));
+
+
+        double xB = xA + vX;
+        double yB = yA + vY;
+        double a = (yA - yB) / (xA - xB);
+        double b = yA - xA * a;
+        double x = (heightToGet - b) / a;
+
+        System.out.println(x);
+        if(x < this.x) {
+            moveRight();
+        } else if(x > this.x) {
+            moveLeft();
+        }
+
+
+
 
     }
 
@@ -246,7 +256,7 @@ public class IA extends Player {
         if(canMove) {
             if(Projectile.getInstance().getStatic() && this.side == Projectile.getInstance().getTeamField() && Projectile.getInstance().getHolder() == null) {
                 goToBall();
-            } else if(!Projectile.getInstance().getStatic()) {
+            } else if(!Projectile.getInstance().getStatic() && this.side != Projectile.getInstance().getTeamField()) {
                 dodgeBall();
             } else {
                 if(dir) {

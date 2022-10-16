@@ -1,85 +1,51 @@
 package fr.icom.info.m1.balleauprisonnier_mvn;
 
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.transform.Rotate;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.util.Duration;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 
 /**
  * Classe gerant un joueur
  */
-public abstract class Player
+public abstract class Player extends GameObject
 {
 	protected Projectile ball;
-
 	protected boolean hasBall;
-	protected double width; 		// largeur du joueur
-	protected double height; 		// hauteur du joueur
 	protected boolean isAlive;		// défini l'état vivant = true ou mort = false du joueur
-	protected double x;       		// position horizontale du joueur
-	protected final double y; 	  	// position verticale du joueur
-	protected double angle; 	// rotation du joueur, devrait toujours être en 0 et 180
-	protected double step;    		// pas d'un joueur lors d'un déplacement
 	protected String playerColor;	// ...
-	// Liste de projectiles lancé par le joueur
 	protected double projectileSpeed = 5;
-	// vitesse du projectile
-	protected Image directionArrow; // image de la flêche de visée du joueur
 	protected Sprite sprite; 		// Sprite du joueur (différents états)
 	protected ImageView PlayerDirectionArrow;
 	// objet amélioré de la flêche de visée
-	protected GraphicsContext graphicsContext;
 	// ..
-
-	protected Image directionProjectile;
-	//
 
 	protected int side;
 
-	Player(GraphicsContext gc, String color, int xInit, int yInit, String side, double moveSpeed)
+	Player(GraphicsContext gc, String color, int xInit, int yInit, int side, double moveSpeed)
 	{
-		// Tous les joueurs commencent au centre du canvas,
-		this.graphicsContext = gc;
-		this.playerColor=color;
+		super(gc, 0, moveSpeed, 2, new Image("assets/PlayerArrow.png"));
+		this.playerColor = color;
+		this.side = side;
+		this.isAlive = true;
 
-		this.angle = 0;
-
-		// On charge la representation du joueur
-		if(Objects.equals(side, "top")){
-			this.side = Const.SIDE_TOP;
-			directionArrow = new Image("assets/PlayerArrowDown.png");
-		}
-		else{
-			this.side = Const.SIDE_BOT;
-			directionArrow = new Image("assets/PlayerArrowUp.png");
-		}
-
-		PlayerDirectionArrow = new ImageView();
-		PlayerDirectionArrow.setImage(directionArrow);
-		PlayerDirectionArrow.setFitWidth(10);
-		PlayerDirectionArrow.setPreserveRatio(true);
-		PlayerDirectionArrow.setSmooth(true);
-		PlayerDirectionArrow.setCache(true);
 
 		Image tilesheetImage = new Image("assets/orc.png");
-		sprite = new Sprite(tilesheetImage, 0,0, Duration.seconds(.2), side);
+		this.sprite = new Sprite(tilesheetImage, 0,0, Duration.seconds(.2), side);
+
 		this.width = sprite.getCellSize();
 		this.height = sprite.getCellSize();
 
-		this.x = xInit - width/2;
-		this.y = yInit - height/2;
+		this.x = xInit - this.width/2;
+		this.y = yInit - this.height/2;
 
 		sprite.setX(x);
 		sprite.setY(y);
 
-		step = moveSpeed;
-		isAlive = true;
 	}
+
 
 	/**
 	 *  Affichage du joueur (seulement flêche)
@@ -89,19 +55,13 @@ public abstract class Player
 		if(ball == null) return;
 		graphicsContext.save(); // saves the current state on stack, including the current transform
 		if(this.side == Const.SIDE_BOT) {
-			rotate(graphicsContext, angle, x + directionArrow.getWidth() / 2, this.getCenterY());
-			graphicsContext.drawImage(directionArrow, x, y - this.width/2);
+			rotate(graphicsContext, angle, x + image.getWidth() / 2, this.getY() + this.width/2);
 		}
 		else {
-			rotate(graphicsContext, angle, x + directionArrow.getWidth() / 2, this.getCenterY() + this.width/2);
-			graphicsContext.drawImage(directionArrow, x, y);
+			rotate(graphicsContext, (angle + 180) % 360, x + image.getWidth() / 2, this.getY() + this.width/2);
 		}
+		graphicsContext.drawImage(image, x, y - this.width/2);
 		graphicsContext.restore(); // back to original state (before rotation)
-	}
-
-	private void rotate(GraphicsContext gc, double angle, double px, double py) {
-		Rotate r = new Rotate(angle, px, py);
-		gc.setTransform(r.getMxx(), r.getMyx(), r.getMxy(), r.getMyy(), r.getTx(), r.getTy());
 	}
 
 	/**
@@ -109,10 +69,10 @@ public abstract class Player
 	 */
 	public void moveLeft()
 	{
-		if (this.getCenterX() - this.width/2 >= Const.OFFSET_FIELD)
-			x -= step;
+		if (this.getX() > Const.OFFSET_FIELD - width/2)
+			x -= moveSpeed;
 		else
-			x = Const.OFFSET_FIELD;
+			x = Const.OFFSET_FIELD - width/2;
 		spriteAnimate();
 	}
 
@@ -121,10 +81,10 @@ public abstract class Player
 	 */
 	public void moveRight()
 	{
-		if (this.getCenterX() + this.width/2 <= Const.FIELD_DIM.width - Const.OFFSET_FIELD)
-			x += step;
+		if (this.getX() < Const.FIELD_DIM.width - Const.OFFSET_FIELD - width/2 )
+			x += moveSpeed;
 		else
-			x = Const.FIELD_DIM.width - Const.OFFSET_FIELD - width;
+			x = Const.FIELD_DIM.width - Const.OFFSET_FIELD - width/2;
 		spriteAnimate();
 	}
 
@@ -136,16 +96,9 @@ public abstract class Player
 	{
 		if(angle < 0) angle = 360 + angle;
 		angle = angle % 360;
-		if(this.side == Const.SIDE_BOT) {
-			if(angle > 270 || angle < 90) angle += 1;
-			else if(angle == 270) angle = 271;
-			else angle = 89;
-		} else {
-			if(angle < 270 || angle > 90) angle += 1;
-			else if(angle == 270) angle = 269;
-			else angle = 91;
-		}
-
+		angle += rotationSpeed;
+		if(angle < 270 && angle >= 180) angle = 270;
+		else if(angle >= 90 && angle <= 180) angle = 90;
 	}
 
 
@@ -156,16 +109,11 @@ public abstract class Player
 	{
 		if(angle < 0) angle = 360 + angle;
 		angle = angle % 360;
-		if(this.side == Const.SIDE_BOT) {
-			if(angle > 270 || angle < 90) angle -= 1;
-			else if(angle == 270) angle = 271;
-			else angle = 89;
-		} else {
-			if(angle < 270 || angle > 90) angle -= 1;
-			else if(angle == 270) angle = 269;
-			else angle = 91;
-		}
+		angle -= rotationSpeed;
+		if(angle <= 270 && angle >= 180) angle = 270;
+		else if(angle > 90 && angle <= 180) angle = 90;
 	}
+
 	public void shoot() {
 		sprite.playShoot();
 	}
@@ -181,7 +129,7 @@ public abstract class Player
 	 */
 	public void boost()
 	{
-		x += step*2;
+		x += moveSpeed *2;
 		spriteAnimate();
 	}
 
@@ -190,22 +138,6 @@ public abstract class Player
 		if(!sprite.isRunning) {sprite.playContinuously();}
 		sprite.setX(x);
 		sprite.setY(y);
-	}
-
-	public double getX() {
-		return x;
-	}
-
-	public double getY() {
-		return y;
-	}
-
-	public double getCenterX() {
-		return x + width / 2;
-	}
-
-	public double getCenterY() {
-		return y + height / 2;
 	}
 
 	public void Animate(ArrayList<String> input, int indice) { }

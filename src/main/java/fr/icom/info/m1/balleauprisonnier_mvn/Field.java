@@ -4,16 +4,12 @@ package fr.icom.info.m1.balleauprisonnier_mvn;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import javafx.animation.AnimationTimer;
-import javafx.event.EventHandler;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.paint.Color;
 
 /**
@@ -37,8 +33,6 @@ public class Field extends Canvas {
 	final int width;
 	final int height;
 
-	final int heightTeam1;
-	final int heightTeam2;
 	Scene s;
 	Group grp;
 
@@ -63,56 +57,17 @@ public class Field extends Canvas {
 
 		gc = this.getGraphicsContext2D();
 		ball = Projectile.Instantiate(gc,
-//				ThreadLocalRandom.current().nextInt(0, 180),
 				0,
-				5,
+				10,
 				Const.FIELD_DIM.width / 2 - 100,
-				Const.FIELD_DIM.height / 2
+				Const.FIELD_DIM.height / 2,
+				-1
 		);
 
 
+
 		// On initialise le terrain de jeu
-		double ms = 2;
-
-		heightTeam1 = Const.HEIGHT_EQ1;
-		heightTeam2 = Const.HEIGHT_EQ2;
-		List<Boolean> idHum = new ArrayList<>();
-		idHum.add(false);
-		idHum.add(false);
-//		idHum.add(false);
-
-		for (int i = 0; i < Const.NB_EQ1; i++) {
-			Player p;
-			if(idHum.get(i)) {
-				p = new Human(
-					gc, colorMap[0],
-					( w * ( i + 1 ))
-							/
-							( Const.NB_EQ1 + 1 ),
-					heightTeam1, "bottom", ms);
-			} else {
-				p = new IA(
-						gc, colorMap[0],
-					( w * ( i + 1 ))
-								/
-						( Const.NB_EQ1 + 1 ),
-						heightTeam1, "bottom", ms);
-			}
-			equipe1.add(p);
-			equipe1.get(i).display();
-		}
-
-		for (int i = 0; i < Const.NB_EQ2; i++) {
-			equipe2.add(new IA(
-					gc, colorMap[1],
-					( w * ( i + 1 ))
-							/
-							( Const.NB_EQ2 + 1 ),
-					heightTeam2, "top", ms));
-			equipe2.get(i).display();
-		}
-
-        setIAEnnemies();
+		generateEnnemies();
 
 		/*
 		 Event Listener du clavier
@@ -160,21 +115,54 @@ public class Field extends Canvas {
 
 	}
 
-    private void setIAEnnemies() {
-        for(Player p : equipe1) {
-            if(p.getClass() == IA.class) {
-                ((IA) p).setEnnemies(equipe2);
-            }
-        }
-        for(Player p : equipe2) {
-            if(p.getClass() == IA.class) {
-                ((IA) p).setEnnemies(equipe1);
-            }
-        }
-    }
+	private Player generateTeam(int nbEq, int height, boolean isHuman, int index, int side) {
+		Player p;
+		if(isHuman) {
+			p = new Human(
+					gc,
+					colorMap[0],
+					this.width*(index+1)/(nbEq + 1),
+					height,
+					side,
+					Const.MOVESPEED
+			);
+		} else {
+			p = new IA(gc,
+					colorMap[0],
+					this.width*(index+1)/(nbEq + 1),
+					height,
+					side,
+					Const.MOVESPEED
+			);
+		}
+		return p;
+	}
 
-    private void generatePlayers() {
+	private void setIAEnnemies() {
+		for(Player p : equipe1) {
+			if(p.getClass() == IA.class) {
+				((IA) p).setEnnemies(equipe2);
+			}
+		}
+		for(Player p : equipe2) {
+			if(p.getClass() == IA.class) {
+				((IA) p).setEnnemies(equipe1);
+			}
+		}
+	}
 
+	private void generateEnnemies() {
+		for (int i = 0; i < Const.NB_EQ1; i++) {
+			equipe1.add(
+					generateTeam(Const.NB_EQ1, Const.HEIGHT_EQ1, i < (Const.NB_EQ1 - Const.NB_IA_EQ1), i, Const.SIDE_BOT)
+			);
+		}
+		for (int i = 0; i < Const.NB_EQ2; i++) {
+			equipe2.add(
+					generateTeam(Const.NB_EQ2, Const.HEIGHT_EQ2, i < (Const.NB_EQ2 - Const.NB_IA_EQ2), i, Const.SIDE_TOP)
+			);
+		}
+		setIAEnnemies();
 	}
 
 	private int equipeBall;
@@ -195,12 +183,12 @@ public class Field extends Canvas {
 							(int) (ball.getY() + (ball.getHeight() / 2))
 					),
 					new Point(
-							(int) (rec.getCenterX() - (rec.width / 2)),
-							(int) (rec.getCenterY() - (rec.height / 2))
+							(int) (rec.getX() - (rec.width / 2)),
+							(int) (rec.getY() - (rec.height / 2))
 					),
 					new Point(
-							(int) (rec.getCenterX() + (rec.width / 2)),
-							(int) (rec.getCenterY() + (rec.height / 2))
+							(int) (rec.getX() + (rec.width / 2)),
+							(int) (rec.getY() + (rec.height / 2))
 					)
 			)) {
 				if(ball.getStatic()) {

@@ -23,8 +23,9 @@ class Sprite extends ImageView {
     private Timeline timeline;
     public boolean isRunning;
 
-    public Sprite(Image animationImage, int numCells, int numRows, Duration frameTime, String side) {
+    public Sprite(Image animationImage, int numCells, int numRows, Duration frameTime, int side) {
         this.numCells = numCells;
+
 
         double cellWidth  = 64;//animationImage.getWidth() / numCells; //64x64
         double cellHeight = 64;//animationImage.getHeight() / numRows;
@@ -33,7 +34,7 @@ class Sprite extends ImageView {
         numCellsWalk = 9;
 
         int lineNumber = 8;
-        if(Objects.equals(side, "top")){
+        if(side == Const.SIDE_TOP){
             lineNumber += 2;
         }
 
@@ -68,7 +69,7 @@ class Sprite extends ImageView {
 
 
         shootTimeline = new Timeline(
-                new KeyFrame(frameTime, event -> {
+                new KeyFrame(Duration.seconds(.1), event -> {
                     frameCounter.set((frameCounter.get() + 1) % numCellsShoot);
                     setViewport(shootClips[frameCounter.get()]);
                 }));
@@ -78,7 +79,7 @@ class Sprite extends ImageView {
 
         lineNumber += 2;
 
-        if(Objects.equals(side, "bottom")){
+        if(side == Const.SIDE_BOT){
             lineNumber += 2;
         }
 

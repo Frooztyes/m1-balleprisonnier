@@ -3,11 +3,10 @@ package fr.icom.info.m1.balleauprisonnier_mvn;
 import javafx.scene.canvas.GraphicsContext;
 
 import java.util.ArrayList;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class Human extends Player {
 
-    Human(GraphicsContext gc, String color, int xInit, int yInit, String side, double moveSpeed) {
+    Human(GraphicsContext gc, String color, int xInit, int yInit, int side, double moveSpeed) {
         super(gc, color, xInit, yInit, side, moveSpeed);
     }
 
