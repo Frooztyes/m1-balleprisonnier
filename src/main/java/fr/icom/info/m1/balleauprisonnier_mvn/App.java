@@ -1,6 +1,7 @@
 package fr.icom.info.m1.balleauprisonnier_mvn;
 
 
+import fr.icom.info.m1.balleauprisonnier_mvn.Controller.PlayerController;
 import javafx.application.Application;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -29,17 +30,19 @@ public class App extends Application
 		Group root = new Group();
 		Scene scene = new Scene(root);
 
+//		Game game = new Game(stage);
+
 		// On cree le terrain de jeu et on l'ajoute a la racine de la scene
 		Field gameField = new Field(scene, Const.FIELD_DIM.width, Const.FIELD_DIM.height, root);
 
 		root.getChildren().add( gameField );
 
-		for(Player p : gameField.getEquipe1()) {
-			root.getChildren().add(p.sprite);
+		for(PlayerController p : gameField.getEquipe1()) {
+			root.getChildren().add(p.getSprite());
 		}
 
-		for(Player p : gameField.getEquipe2()) {
-			root.getChildren().add(p.sprite);
+		for(PlayerController p : gameField.getEquipe2()) {
+			root.getChildren().add(p.getSprite());
 		}
 
 		// On ajoute la scene a la fenetre et on affiche

@@ -5,11 +5,22 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import fr.icom.info.m1.balleauprisonnier_mvn.Controller.HumanController;
+import fr.icom.info.m1.balleauprisonnier_mvn.Controller.IAController;
+import fr.icom.info.m1.balleauprisonnier_mvn.Controller.PlayerController;
+import fr.icom.info.m1.balleauprisonnier_mvn.Controller.ProjectileController;
+import fr.icom.info.m1.balleauprisonnier_mvn.Model.Human;
+import fr.icom.info.m1.balleauprisonnier_mvn.Model.IA;
+import fr.icom.info.m1.balleauprisonnier_mvn.Model.Player;
+import fr.icom.info.m1.balleauprisonnier_mvn.Model.Projectile;
+import fr.icom.info.m1.balleauprisonnier_mvn.View.PlayerView;
+import fr.icom.info.m1.balleauprisonnier_mvn.View.ProjectileView;
 import javafx.animation.AnimationTimer;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
 /**
@@ -18,14 +29,14 @@ import javafx.scene.paint.Color;
  */
 public class Field extends Canvas {
 	/** Joueurs */
-	List<Player> equipe1 = new ArrayList<>();
-	List<Player> equipe2 = new ArrayList<>();
+	List<PlayerController> equipe1 = new ArrayList<>();
+	List<PlayerController> equipe2 = new ArrayList<>();
 	/** Couleurs possibles */
 	String[] colorMap = new String[] {"blue", "green", "orange", "purple", "yellow"};
 	/** Tableau traçant les evenements */
 	ArrayList<String> input = new ArrayList<>();
 
-	Projectile ball;
+	ProjectileController ball;
 
 
 
@@ -51,18 +62,25 @@ public class Field extends Canvas {
 		this.grp = root;
 		this.width = w;
 		this.height = h;
+		gc = this.getGraphicsContext2D();
 
 		// permet de capturer le focus et donc les evenements clavier et souris
 		this.setFocusTraversable(true);
 
-		gc = this.getGraphicsContext2D();
-		ball = Projectile.Instantiate(gc,
-				0,
-				10,
-				Const.FIELD_DIM.width / 2 - 100,
-				Const.FIELD_DIM.height / 2,
-				1
+		ProjectileView pv = new ProjectileView(
+				gc, new Image("assets/ball.png")
 		);
+		Projectile p = new Projectile(
+			0,
+			5,
+				(double) Const.FIELD_DIM.width / 2 - 100,
+				(double) Const.FIELD_DIM.height / 2,
+				1,
+				pv.getImage().getWidth(),
+				pv.getImage().getHeight()
+		);
+
+		ball = ProjectileController.Instantiate(p, pv);
 
 
 
@@ -115,38 +133,53 @@ public class Field extends Canvas {
 
 	}
 
-	private Player generateTeam(int nbEq, int height, boolean isHuman, int index, int side) {
+	private PlayerController generateTeam(int nbEq, int height, boolean isHuman, int index, int side) {
+		PlayerController pc;
 		Player p;
+		PlayerView pv = new PlayerView(
+				gc, new Image("assets/PlayerArrow.png")
+		);
 		if(isHuman) {
 			p = new Human(
-					gc,
 					colorMap[0],
 					this.width*(index+1)/(nbEq + 1),
 					height,
 					side,
-					Const.MOVESPEED
+					Const.MOVESPEED,
+					ball,
+					new Image("assets/orc.png")
+			);
+			pc = new HumanController(
+					(Human) p,
+					pv
 			);
 		} else {
-			p = new IA(gc,
+			p = new IA(
 					colorMap[0],
 					this.width*(index+1)/(nbEq + 1),
 					height,
 					side,
-					Const.MOVESPEED
+					Const.MOVESPEED,
+					ball,
+					new Image("assets/orc.png")
+			);
+			pc = new IAController(
+					(IA) p,
+					pv
 			);
 		}
-		return p;
+		return pc;
 	}
 
 	private void setIAEnnemies() {
-		for(Player p : equipe1) {
-			if(p.getClass() == IA.class) {
-				((IA) p).setEnnemies(equipe2);
+		for(PlayerController p : equipe1) {
+			if(p.getClass() == IAController.class) {
+				((IAController) p).setEnnemies(equipe2);
 			}
 		}
-		for(Player p : equipe2) {
-			if(p.getClass() == IA.class) {
-				((IA) p).setEnnemies(equipe1);
+		for(PlayerController p : equipe2) {
+			if(p.getClass() == IAController.class) {
+				((IAController) p).setEnnemies(equipe1);
 			}
 		}
 	}
@@ -167,12 +200,12 @@ public class Field extends Canvas {
 
 	private int equipeBall;
 
-	private void check(List<Player> recepteur, int numEquipe) {
+	private void check(List<PlayerController> recepteur, int numEquipe) {
 		if(numEquipe == equipeBall) return;
-		List<Player> toKill = new ArrayList<>();
-		for (Player rec : recepteur)
+		List<PlayerController> toKill = new ArrayList<>();
+		for (PlayerController rec : recepteur)
 		{
-			if(!rec.isAlive) continue;
+			if(!rec.isAlive()) continue;
 			if(rectangleOverlap(
 					new Point(
 							(int) (ball.getX() - (ball.getWidth() / 2)),
@@ -183,17 +216,17 @@ public class Field extends Canvas {
 							(int) (ball.getY() + (ball.getHeight() / 2))
 					),
 					new Point(
-							(int) (rec.getX() - (rec.width / 2)),
-							(int) (rec.getY() - (rec.height / 2))
+							(int) (rec.getX() - (rec.getWidth() / 2)),
+							(int) (rec.getY() - (rec.getHeight() / 2))
 					),
 					new Point(
-							(int) (rec.getX() + (rec.width / 2)),
-							(int) (rec.getY() + (rec.height / 2))
+							(int) (rec.getX() + (rec.getWidth() / 2)),
+							(int) (rec.getY() + (rec.getHeight() / 2))
 					)
 			)) {
-				if(ball.getStatic()) {
+				if(ball.isStatic()) {
 					ball.setMoving(false);
-					rec.setHasBall(ball);
+					rec.setHasBall(true);
 					ball.setHolder(rec);
 					equipeBall = numEquipe;
 				} else {
@@ -202,7 +235,7 @@ public class Field extends Canvas {
 			}
 		}
 
-		for (Player player : toKill) {
+		for (PlayerController player : toKill) {
 			player.kill();
 		}
 
@@ -212,7 +245,7 @@ public class Field extends Canvas {
 			if(ball.getY() <= Const.HEIGHT_EQ2) ball.setStatic(true, Const.SIDE_TOP);
 			else if(ball.getY() >= Const.HEIGHT_EQ1) ball.setStatic(true, Const.SIDE_BOT);
 		}
-		if(ball.getY() >= (Const.FIELD_DIM.height / 2) - 10 && ball.getY() <= (Const.FIELD_DIM.height / 2) + 10) {
+		if(ball.getY() >= ((double) Const.FIELD_DIM.height / 2) - 10 && ball.getY() <= ((double) Const.FIELD_DIM.height / 2) + 10) {
 			ball.setMoving(false);
 		}
 
@@ -235,21 +268,21 @@ public class Field extends Canvas {
 	}
 
 	private void handleInputs() {
-		for (Player p : equipe1) {
-			p.Animate(input, equipe1.indexOf(p));
+		for (PlayerController p : equipe1) {
+			p.updateView(input, equipe1.indexOf(p));
 		}
 
-		for (Player p : equipe2) {
-			p.Animate(input, equipe2.indexOf(p));
+		for (PlayerController p : equipe2) {
+			p.updateView(input, equipe2.indexOf(p));
 		}
 
-		ball.display();
+		ball.updateView();
 	}
 
-	public List<Player> getEquipe1() {
+	public List<PlayerController> getEquipe1() {
 		return equipe1;
 	}
-	public List<Player> getEquipe2() {
+	public List<PlayerController> getEquipe2() {
 		return equipe2;
 	}
 }

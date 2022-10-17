@@ -1,6 +1,8 @@
-package fr.icom.info.m1.balleauprisonnier_mvn;
+package fr.icom.info.m1.balleauprisonnier_mvn.Model;
 
-import javafx.scene.canvas.GraphicsContext;
+import fr.icom.info.m1.balleauprisonnier_mvn.Const;
+import fr.icom.info.m1.balleauprisonnier_mvn.Controller.ProjectileController;
+import fr.icom.info.m1.balleauprisonnier_mvn.Sprite;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.util.Duration;
@@ -12,56 +14,33 @@ import java.util.ArrayList;
  */
 public abstract class Player extends GameObject
 {
-	protected Projectile ball;
+	protected ProjectileController pc;
 	protected boolean hasBall;
 	protected boolean isAlive;		// défini l'état vivant = true ou mort = false du joueur
 	protected String playerColor;	// ...
 	protected double projectileSpeed = 5;
 	protected Sprite sprite; 		// Sprite du joueur (différents états)
-	protected ImageView PlayerDirectionArrow;
-	// objet amélioré de la flêche de visée
-	// ..
-
 	protected int side;
 
-	Player(GraphicsContext gc, String color, int xInit, int yInit, int side, double moveSpeed)
+	Player(String color, int xInit, int yInit, int side, double moveSpeed, ProjectileController ball, Image image)
 	{
-		super(gc, 0, moveSpeed, 2, new Image("assets/PlayerArrow.png"));
+		super( 0, moveSpeed, 2);
 		this.playerColor = color;
 		this.side = side;
 		this.isAlive = true;
+		this.pc = ball;
 
-
-		Image tilesheetImage = new Image("assets/orc.png");
-		this.sprite = new Sprite(tilesheetImage, 0,0, Duration.seconds(.2), side);
-
+		sprite = new Sprite(image, Duration.seconds(.2), side);
 		this.width = sprite.getCellSize();
 		this.height = sprite.getCellSize();
 
 		this.x = xInit - this.width/2;
 		this.y = yInit - this.height/2;
-
 		sprite.setX(x);
 		sprite.setY(y);
 
-	}
+		hasBall = false;
 
-
-	/**
-	 *  Affichage du joueur (seulement flêche)
-	 */
-	public void display()
-	{
-		if(ball == null) return;
-		graphicsContext.save(); // saves the current state on stack, including the current transform
-		if(this.side == Const.SIDE_BOT) {
-			rotate(graphicsContext, angle, x + image.getWidth() / 2, this.getY() + this.width/2);
-		}
-		else {
-			rotate(graphicsContext, (angle + 180) % 360, x + image.getWidth() / 2, this.getY() + this.width/2);
-		}
-		graphicsContext.drawImage(image, x, y - this.width/2);
-		graphicsContext.restore(); // back to original state (before rotation)
 	}
 
 	/**
@@ -140,15 +119,25 @@ public abstract class Player extends GameObject
 		sprite.setY(y);
 	}
 
+	public abstract void update(ArrayList<String> input, int indice);
+
 	public void Animate(ArrayList<String> input, int indice) { }
 
-	public void setHasBall(Projectile ball) {
-		this.ball = ball;
+	public void setHasBall(boolean status) {
+		this.hasBall = status;
 	}
 
-	public Projectile getHasBall() { return ball; }
+	public boolean hasBall() { return hasBall; }
 
-	public boolean hasBall() {
-		return hasBall;
+	public int getSide() {
+		return side;
+	}
+
+	public boolean isAlive() {
+		return isAlive;
+	}
+
+	public Sprite getSprite() {
+		return sprite;
 	}
 }

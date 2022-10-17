@@ -1,6 +1,9 @@
-package fr.icom.info.m1.balleauprisonnier_mvn;
+package fr.icom.info.m1.balleauprisonnier_mvn.Model;
 
-import javafx.scene.canvas.GraphicsContext;
+import fr.icom.info.m1.balleauprisonnier_mvn.Const;
+import fr.icom.info.m1.balleauprisonnier_mvn.Controller.PlayerController;
+import fr.icom.info.m1.balleauprisonnier_mvn.Controller.ProjectileController;
+import javafx.scene.image.Image;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -15,22 +18,22 @@ public class IA extends Player {
     private final int CD_MOVE = 25;
     private final int CD_SHOOT_MAX = 150;
     private final int CD_SHOOT_MAX_OFFSET = 20;
-    private List<Player> ennemies;
+    private List<PlayerController> ennemies;
     private boolean canShoot;
     private boolean canMove = true;
     private double angleToGet;
     private double precision;
 
 
-    IA(GraphicsContext gc, String color, int xInit, int yInit, int side, double moveSpeed) {
-        super(gc, color, xInit, yInit, side, moveSpeed);
+    public IA(String color, int xInit, int yInit, int side, double moveSpeed, ProjectileController ball, Image image) {
+        super(color, xInit, yInit, side, moveSpeed, ball, image);
         this.cooldownMove = CD_MOVE;
         this.cooldownShoot = ThreadLocalRandom.current().nextInt(CD_SHOOT_MAX - CD_SHOOT_MAX_OFFSET, CD_SHOOT_MAX + CD_SHOOT_MAX_OFFSET);
         this.projectileSpeed = -projectileSpeed;
         this.precision = 0.85;
     }
 
-    public void setEnnemies(List<Player> ennemies) {
+    public void setEnnemies(List<PlayerController> ennemies) {
         this.ennemies = ennemies;
     }
 
@@ -38,9 +41,9 @@ public class IA extends Player {
      * Donne l'endroit où il y a le plus d'adversaires en vie
      * @param alive liste d'ennemies en vie
      */
-    private int getInterestCoef(List<Player> alive) {
+    private int getInterestCoef(List<PlayerController> alive) {
         int n = 0;
-        for(Player p : alive) {
+        for(PlayerController p : alive) {
             if(this.getX() > p.getX()) n++;
             else if(this.getX() < p.getX()) n--;
         }
@@ -67,9 +70,9 @@ public class IA extends Player {
         double y = -1;
 
         // récupération des adversaires en vie
-        List<Player> alives = new ArrayList<>();
-        for (Player p : ennemies) {
-            if(p.isAlive) alives.add(p);
+        List<PlayerController> alives = new ArrayList<>();
+        for (PlayerController p : ennemies) {
+            if(p.isAlive()) alives.add(p);
         }
 
         // un seul adversaire en vie
@@ -89,7 +92,7 @@ public class IA extends Player {
         } else {
             // on prends la position moyenne des adversaires
             int cpt = 0;
-            for(Player p : alives) {
+            for(PlayerController p : alives) {
                 if(getInterestCoef(alives) > 0) {
                     // on ignore ceux à gauche
                     if(this.getX() < p.getX()) continue;
@@ -154,14 +157,21 @@ public class IA extends Player {
         return (int) deg;
     }
 
+    @Override
+    public void update() { }
+
+    public void update(ArrayList<String> input, int indice) {
+        Animate(input, indice);
+    }
+
     public void Animate(ArrayList<String> input, int indice) {
+
         if(this.isAlive) {
             this.move();
             // si peut tirer, alors tire
-            if(ball != null) {
+            if(hasBall) {
                 prepareShot();
             }
-            this.display();
         }
     }
 
@@ -192,44 +202,36 @@ public class IA extends Player {
         if(cooldownShoot <= 0 && canShoot) {
             if(angle == angleToGet) {
                 cooldownShoot = ThreadLocalRandom.current().nextInt(CD_SHOOT_MAX - CD_SHOOT_MAX_OFFSET, CD_SHOOT_MAX + CD_SHOOT_MAX_OFFSET);
-                ball.send(angle, this.side);
+                pc.send(angle, this.side);
                 shoot();
-                ball = null;
+                hasBall = false;
             }
         }
     }
 
     private void goToBall() {
-        if(this.x > Projectile.getInstance().getX()) {
+        if(this.x > pc.getX()) {
             moveLeft();
-        } else if(this.x < Projectile.getInstance().getX()){
+        } else if(this.x < pc.getX()){
             moveRight();
         }
-    }
-
-    public static double roundAvoid(double value, int places) {
-        double scale = Math.pow(10, places);
-        return Math.round(value * scale) / scale;
     }
 
     private void    dodgeBall() {
         // f(x) = ax + b = teamHeight
         int heightToGet;
-        int direction;
         if(this.side == Const.SIDE_BOT) {
             heightToGet = Const.HEIGHT_EQ1;
         } else {
             heightToGet = Const.HEIGHT_EQ2;
         }
-        Projectile ball = Projectile.getInstance();
 
-        double xA = ball.getX();
-        double yA = ball.getY();
+        double xA = pc.getX();
+        double yA = pc.getY();
 
 
-        double vX = ball.getvX();
-        double vY = ball.getvY();
-//        System.out.println(roundAvoid(vX, 3) + ";" +  roundAvoid(vY, 3));
+        double vX = pc.getvX();
+        double vY = pc.getvY();
 
 
         double xB = xA + vX;
@@ -238,25 +240,20 @@ public class IA extends Player {
         double b = yA - xA * a;
         double x = (heightToGet - b) / a;
 
-        System.out.println(x);
         if(x < this.x) {
             moveRight();
         } else if(x > this.x) {
             moveLeft();
         }
-
-
-
-
     }
 
 
     public void move() {
 
         if(canMove) {
-            if(Projectile.getInstance().getStatic() && this.side == Projectile.getInstance().getTeamField() && Projectile.getInstance().getHolder() == null) {
+            if(pc.isStatic() && this.side == pc.getTeamfield() && pc.getHolder() == null) {
                 goToBall();
-            } else if(!Projectile.getInstance().getStatic() && this.side != Projectile.getInstance().getTeamField()) {
+            } else if(!pc.isStatic() && this.side != pc.getTeamfield()) {
                 dodgeBall();
             } else {
                 if(dir) {
@@ -278,9 +275,8 @@ public class IA extends Player {
         }
     }
 
-    public void setHasBall(Projectile ball) {
-        this.ball = ball;
+    public void setHasBall(boolean status) {
+        hasBall = status;
         cooldownShoot = ThreadLocalRandom.current().nextInt(CD_SHOOT_MAX - CD_SHOOT_MAX_OFFSET, CD_SHOOT_MAX + CD_SHOOT_MAX_OFFSET);
-
     }
 }

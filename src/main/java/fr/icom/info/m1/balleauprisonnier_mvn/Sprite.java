@@ -6,16 +6,13 @@ import javafx.geometry.*;
 import javafx.scene.image.*;
 import javafx.util.Duration;
 
-import java.util.Objects;
-
-class Sprite extends ImageView {
+public class Sprite extends ImageView {
     private final Rectangle2D[] walkClips;
     private final Rectangle2D[] shootClips;
     private final Rectangle2D[] dieClips;
-    private int numCells;
-    private int numCellsWalk;
-    private int numCellsShoot;
-    private int numCellsDie;
+    private final int numCellsWalk;
+    private final int numCellsShoot;
+    private final int numCellsDie;
     private final Timeline walkTimeline;
     private final IntegerProperty frameCounter = new SimpleIntegerProperty(0);
     private final Timeline shootTimeline;
@@ -23,8 +20,7 @@ class Sprite extends ImageView {
     private Timeline timeline;
     public boolean isRunning;
 
-    public Sprite(Image animationImage, int numCells, int numRows, Duration frameTime, int side) {
-        this.numCells = numCells;
+    public Sprite(Image animationImage, Duration frameTime, int side) {
 
 
         double cellWidth  = 64;//animationImage.getWidth() / numCells; //64x64
