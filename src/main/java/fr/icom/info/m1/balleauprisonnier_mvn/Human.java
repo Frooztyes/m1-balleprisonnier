@@ -61,6 +61,7 @@ public class Human extends Player {
         {
             this.shoot();
         }
+        if(ball != null) System.out.println(angle);
         this.display();
     }
 }

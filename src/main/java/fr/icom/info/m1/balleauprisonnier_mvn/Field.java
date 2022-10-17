@@ -61,7 +61,7 @@ public class Field extends Canvas {
 				10,
 				Const.FIELD_DIM.width / 2 - 100,
 				Const.FIELD_DIM.height / 2,
-				-1
+				1
 		);
 
 

@@ -4,7 +4,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.transform.Rotate;
 
-public class Projectile extends GameObject{
+public class Projectile extends GameObject {
 
     private int teamField;
     private boolean isMoving;

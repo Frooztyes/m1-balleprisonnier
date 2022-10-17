@@ -200,9 +200,9 @@ public class IA extends Player {
     }
 
     private void goToBall() {
-        if(Projectile.getInstance().getX() < this.x) {
+        if(this.x > Projectile.getInstance().getX()) {
             moveLeft();
-        } else if(Projectile.getInstance().getX() > this.x){
+        } else if(this.x < Projectile.getInstance().getX()){
             moveRight();
         }
     }
@@ -212,7 +212,7 @@ public class IA extends Player {
         return Math.round(value * scale) / scale;
     }
 
-    private void dodgeBall() {
+    private void    dodgeBall() {
         // f(x) = ax + b = teamHeight
         int heightToGet;
         int direction;
