@@ -2,9 +2,7 @@ package fr.icom.info.m1.balleauprisonnier_mvn.Model;
 
 import fr.icom.info.m1.balleauprisonnier_mvn.Const;
 import fr.icom.info.m1.balleauprisonnier_mvn.Controller.ProjectileController;
-import fr.icom.info.m1.balleauprisonnier_mvn.Sprite;
 import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.util.Duration;
 
 import java.util.ArrayList;

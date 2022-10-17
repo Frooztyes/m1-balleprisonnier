@@ -1,7 +1,7 @@
 package fr.icom.info.m1.balleauprisonnier_mvn.Controller;
 
 import fr.icom.info.m1.balleauprisonnier_mvn.Model.Player;
-import fr.icom.info.m1.balleauprisonnier_mvn.Sprite;
+import fr.icom.info.m1.balleauprisonnier_mvn.Model.Sprite;
 import fr.icom.info.m1.balleauprisonnier_mvn.View.PlayerView;
 
 import java.util.ArrayList;
