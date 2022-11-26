@@ -4,7 +4,7 @@ import fr.icom.info.m1.balleauprisonnier_mvn.Model.Game;
 import fr.icom.info.m1.balleauprisonnier_mvn.View.GameView;
 import javafx.animation.AnimationTimer;
 
-public class GameController extends ObjectController{
+public class GameController extends ObjectController {
 
     public GameController(Game model, GameView view) {
         super(model, view);
@@ -20,6 +20,7 @@ public class GameController extends ObjectController{
         {
             public void handle(long currentNanoTime)
             {
+                if(Game.isPause) return;
                 updateView();
             }
         }.start();

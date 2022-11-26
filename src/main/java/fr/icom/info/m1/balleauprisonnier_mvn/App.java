@@ -1,6 +1,5 @@
 package fr.icom.info.m1.balleauprisonnier_mvn;
 
-
 import fr.icom.info.m1.balleauprisonnier_mvn.Controller.GameController;
 import fr.icom.info.m1.balleauprisonnier_mvn.Model.Game;
 import fr.icom.info.m1.balleauprisonnier_mvn.View.GameView;
@@ -17,26 +16,27 @@ public class App extends Application
 	/**
 	 * En javafx start() lance l'application
 	 * <p>
-	 * On cree le SceneGraph de l'application ici
 	 * @see <a href="https://docs.oracle.com/javafx/2/scenegraph/jfxpub-scenegraph.htm">Link</a>
-	 *
 	 */
 	@Override
 	public void start(Stage stage)
 	{
+		// création du modèle jeu
+		// génère le graphics context à envoyer à la vue
 		Game game = new Game(stage,
-				Const.NB_EQ1,
-				Const.NB_EQ2,
 				Const.FIELD_DIM.width,
 				Const.FIELD_DIM.height
 		);
 
+		// création de la vue du jeu
 		GameView gv = new GameView(game.getGraphicsContext(), null);
 
+		// création du controlleur reliant modèle et vue
 		GameController gc = new GameController(
 				game, gv
 		);
 
+		// lancement de la partie
 		gc.start();
 
 	}

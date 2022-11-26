@@ -3,7 +3,6 @@ package fr.icom.info.m1.balleauprisonnier_mvn.Controller;
 import fr.icom.info.m1.balleauprisonnier_mvn.Model.Player;
 import fr.icom.info.m1.balleauprisonnier_mvn.Model.Sprite;
 import fr.icom.info.m1.balleauprisonnier_mvn.View.PlayerView;
-
 import java.util.ArrayList;
 
 public abstract class PlayerController extends ObjectController {
@@ -31,8 +30,8 @@ public abstract class PlayerController extends ObjectController {
     public void updateView() {
     }
 
-    public void updateView(ArrayList<String> input, int indice) {
-        ((Player) model).update(input, indice);
+    public void updateView(ArrayList<String> input) {
+        ((Player) model).update(input);
         ((PlayerView) view).display(
                 ((Player) model).hasBall(),
                 ((Player) model).getSide(),

@@ -7,5 +7,4 @@ public class HumanController extends PlayerController {
     public HumanController(Human model, PlayerView view) {
         super(model, view);
     }
-
 }

@@ -4,31 +4,27 @@ import fr.icom.info.m1.balleauprisonnier_mvn.Const;
 import fr.icom.info.m1.balleauprisonnier_mvn.Controller.ProjectileController;
 import javafx.scene.image.Image;
 import javafx.util.Duration;
-
 import java.util.ArrayList;
 
 /**
  * Classe gerant un joueur
  */
-public abstract class Player extends GameObject
-{
+public abstract class Player extends GameObject {
 	protected ProjectileController pc;
 	protected boolean hasBall;
 	protected boolean isAlive;		// défini l'état vivant = true ou mort = false du joueur
-	protected String playerColor;	// ...
 	protected double projectileSpeed = 5;
 	protected Sprite sprite; 		// Sprite du joueur (différents états)
 	protected int side;
 
-	Player(String color, int xInit, int yInit, int side, double moveSpeed, ProjectileController ball, Image image)
+	Player(int xInit, int yInit, int side, double moveSpeed, ProjectileController ball, Image image)
 	{
 		super( 0, moveSpeed, 2);
-		this.playerColor = color;
 		this.side = side;
 		this.isAlive = true;
 		this.pc = ball;
 
-		sprite = new Sprite(image, Duration.seconds(.2), side);
+		this.sprite = new Sprite(image, Duration.seconds(.2), side);
 		this.width = sprite.getCellSize();
 		this.height = sprite.getCellSize();
 
@@ -37,12 +33,11 @@ public abstract class Player extends GameObject
 		sprite.setX(x);
 		sprite.setY(y);
 
-		hasBall = false;
-
+		this.hasBall = false;
 	}
 
 	/**
-	 *  Deplacement du joueur vers la gauche, on cantonne le joueur sur le plateau de jeu
+	 *  Déplacement du joueur vers la gauche, on cantonne le joueur sur le plateau de jeu
 	 */
 	public void moveLeft()
 	{
@@ -54,7 +49,7 @@ public abstract class Player extends GameObject
 	}
 
 	/**
-	 *  Deplacement du joueur vers la droite
+	 *  Délacement du joueur vers la droite
 	 */
 	public void moveRight()
 	{
@@ -71,9 +66,13 @@ public abstract class Player extends GameObject
 	 */
 	public void turnLeft()
 	{
+		// correction d'angle
 		if(angle < 0) angle = 360 + angle;
 		angle = angle % 360;
+
 		angle += rotationSpeed;
+
+		// blocage de l'angle
 		if(angle < 270 && angle >= 180) angle = 270;
 		else if(angle >= 90 && angle <= 180) angle = 90;
 	}
@@ -84,9 +83,13 @@ public abstract class Player extends GameObject
 	 */
 	public void turnRight()
 	{
+		// correction d'angle
 		if(angle < 0) angle = 360 + angle;
 		angle = angle % 360;
+
 		angle -= rotationSpeed;
+
+		// blocage de l'angle
 		if(angle <= 270 && angle >= 180) angle = 270;
 		else if(angle > 90 && angle <= 180) angle = 90;
 	}
@@ -101,25 +104,16 @@ public abstract class Player extends GameObject
 			sprite.playDie();
 		}
 	}
-	/**
-	 *  Deplacement en mode boost
-	 */
-	public void boost()
-	{
-		x += moveSpeed *2;
-		spriteAnimate();
-	}
 
-	private void spriteAnimate(){
-		//System.out.println("Animating sprite");
-		if(!sprite.isRunning) {sprite.playContinuously();}
+	private void spriteAnimate() {
+		if(!sprite.isRunning()) {sprite.playContinuously();}
 		sprite.setX(x);
 		sprite.setY(y);
 	}
 
-	public abstract void update(ArrayList<String> input, int indice);
+	public abstract void update(ArrayList<String> input);
 
-	public void Animate(ArrayList<String> input, int indice) { }
+	public void Animate(ArrayList<String> input) { }
 
 	public void setHasBall(boolean status) {
 		this.hasBall = status;

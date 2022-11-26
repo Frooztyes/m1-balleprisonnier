@@ -11,7 +11,9 @@ public class PlayerView extends ViewObject {
 
     public void display(boolean hasBall, int side, double x, double y, double height, double angle)
     {
-        if(!hasBall) return;
+		// on n'affiche pas la flêche de visée dans le cas où l'on n'a pas la balle
+        if (!hasBall) return;
+
 		graphicsContext.save(); // saves the current state on stack, including the current transform
 		if(side == Const.SIDE_BOT) {
 			rotate(graphicsContext, angle, x + image.getWidth() / 2, y + height/2);

@@ -3,7 +3,7 @@ package fr.icom.info.m1.balleauprisonnier_mvn.View;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 
-public class ProjectileView extends ViewObject{
+public class ProjectileView extends ViewObject {
 
 
     public ProjectileView(GraphicsContext gc, Image image) {

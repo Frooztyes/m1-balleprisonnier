@@ -10,6 +10,7 @@ public class Projectile extends GameObject {
     private double rotation;
     private double vX;
     private double vY;
+    private PlayerController holder;
 
     public Projectile(double angle, double speed, double x, double y, int initialDirection, double width, double height) {
         super(angle, speed, 5);
@@ -31,6 +32,9 @@ public class Projectile extends GameObject {
         }
     }
 
+    /**
+     * envoie la balle selon l'angle et effectue les modifications relatives à la position du lanceur.
+     */
     public void send(double angle, int sideSender) {
         if(holder == null) return;
 
@@ -48,6 +52,10 @@ public class Projectile extends GameObject {
         this.holder = null;
     }
 
+    /**
+     * Déplace la balle sur le joueur quand il l'a porte
+     * Déplace la balle si elle est en mouvement.
+     */
     void move() {
         if(holder != null) {
             setAt(holder.getX(), holder.getY());
@@ -58,7 +66,15 @@ public class Projectile extends GameObject {
         }
     }
 
-    private PlayerController holder;
+    /**
+     * Met à jour la position de la balle (et rotation sur elle-même)
+     */
+    public void update() {
+        move();
+        if(!isStatic && holder == null) rotation += rotationSpeed;
+        if(rotation >= 360) rotation = 0;
+    }
+
     public void setHolder(PlayerController p) {
         holder = p;
     }
@@ -77,12 +93,6 @@ public class Projectile extends GameObject {
         return teamField;
     }
 
-
-    public void update() {
-        move();
-        if(!isStatic && holder == null) rotation += rotationSpeed;
-        if(rotation >= 360) rotation = 0;
-    }
 
     public double getRotation() {
         return rotation;
@@ -108,6 +118,10 @@ public class Projectile extends GameObject {
         this.setStatic(!moving);
         this.setMoving(moving);
         teamField = position;
+    }
+
+    public void setvX(double vX) {
+        this.vX = vX;
     }
 
     public double getvX() {

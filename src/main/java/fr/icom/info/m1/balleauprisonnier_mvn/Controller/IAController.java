@@ -2,7 +2,6 @@ package fr.icom.info.m1.balleauprisonnier_mvn.Controller;
 
 import fr.icom.info.m1.balleauprisonnier_mvn.Model.IA;
 import fr.icom.info.m1.balleauprisonnier_mvn.View.PlayerView;
-
 import java.util.List;
 
 public class IAController extends PlayerController {

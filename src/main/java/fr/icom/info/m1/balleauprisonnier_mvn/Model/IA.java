@@ -4,7 +4,6 @@ import fr.icom.info.m1.balleauprisonnier_mvn.Const;
 import fr.icom.info.m1.balleauprisonnier_mvn.Controller.PlayerController;
 import fr.icom.info.m1.balleauprisonnier_mvn.Controller.ProjectileController;
 import javafx.scene.image.Image;
-
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,21 +15,16 @@ public class IA extends Player {
     // dir true = left, false = right
     private boolean dir = false;
     private final int CD_MOVE = 25;
-    private final int CD_SHOOT_MAX = 150;
-    private final int CD_SHOOT_MAX_OFFSET = 20;
     private List<PlayerController> ennemies;
     private boolean canShoot;
-    private boolean canMove = true;
     private double angleToGet;
-    private double precision;
+    private int state;
 
-
-    public IA(String color, int xInit, int yInit, int side, double moveSpeed, ProjectileController ball, Image image) {
-        super(color, xInit, yInit, side, moveSpeed, ball, image);
+    public IA(int xInit, int yInit, int side, double moveSpeed, ProjectileController ball, Image image) {
+        super(xInit, yInit, side, moveSpeed, ball, image);
         this.cooldownMove = CD_MOVE;
-        this.cooldownShoot = ThreadLocalRandom.current().nextInt(CD_SHOOT_MAX - CD_SHOOT_MAX_OFFSET, CD_SHOOT_MAX + CD_SHOOT_MAX_OFFSET);
         this.projectileSpeed = -projectileSpeed;
-        this.precision = 0.85;
+        this.state = Const.STATE_MOVE;
     }
 
     public void setEnnemies(List<PlayerController> ennemies) {
@@ -38,8 +32,8 @@ public class IA extends Player {
     }
 
     /**
-     * Donne l'endroit où il y a le plus d'adversaires en vie
-     * @param alive liste d'ennemies en vie
+     * Calcul le coefficient d'intérêt selon les ennemis présent dans le camps adverse
+     * Ce coefficient correspond à l'endroit où il y a le plus d'ennemis par rapport à soit même.
      */
     private int getInterestCoef(List<PlayerController> alive) {
         int n = 0;
@@ -119,6 +113,9 @@ public class IA extends Player {
         }
     }
 
+    /**
+     * Calcul l'angle où l'IA doit viser depuis son point à atteindre.
+     */
     private double calculateAngle() {
         Point middle = this.getFocusPoint();
 
@@ -128,8 +125,10 @@ public class IA extends Player {
         } else {
             canShoot = true;
         }
+
         double delta_x;
         double delta_y;
+
         if(side == Const.SIDE_TOP) {
             delta_x = this.getX() - middle.x;
             delta_y = this.getY() - middle.y;
@@ -140,13 +139,8 @@ public class IA extends Player {
 
         // calcul de l'angle entre le point à atteindre et sois même
         double deg = (Math.atan2(delta_x, -delta_y) * 180) / Math.PI;
-        // ajout d'imprécision
-//        double un_deg = deg * precision;
-//        if(((int) (deg - un_deg)) > (((int) (deg + un_deg)))) {
-//            deg = ThreadLocalRandom.current().nextInt((int) (deg + un_deg), (int) (deg - un_deg));
-//        } else if(((int) (deg - un_deg)) < (((int) (deg + un_deg)))) {
-//            deg = ThreadLocalRandom.current().nextInt((int) (deg - un_deg), (int) (deg + un_deg));
-//        }
+
+        // correction de l'angle.
         if(deg < 0) {
             deg = 360 - deg;
             deg = deg % 360;
@@ -160,22 +154,57 @@ public class IA extends Player {
     @Override
     public void update() { }
 
-    public void update(ArrayList<String> input, int indice) {
-        Animate(input, indice);
+    public void update(ArrayList<String> input) {
+        Animate(input);
     }
 
-    public void Animate(ArrayList<String> input, int indice) {
+    /**
+     * Gère le comportement de l'ia selon son état.
+     * @see <a href="https://gamedevelopment.tutsplus.com/tutorials/finite-state-machines-theory-and-implementation--gamedev-11867">Finite-State Machines: Theory and Implementation</a>
+     */
+    public void Animate(ArrayList<String> input) {
+        switch (state) {
+            case Const.STATE_MOVE:
+                this.move();
+                break;
 
-        if(this.isAlive) {
-            this.move();
-            // si peut tirer, alors tire
-            if(hasBall) {
-                prepareShot();
-            }
+            case Const.STATE_PREPARE_SHOOT:
+                this.move();
+                this.prepareShot();
+                break;
+
+            case Const.STATE_SHOOT:
+                this.shoot();
+                break;
+
+            case Const.STATE_DEAD:
+                // nothing
+                break;
+
+            default:
+                break;
         }
     }
 
+    /**
+     * Envoie la balle.
+     */
+    @Override
+    public void shoot() {
+        if(!hasBall) {
+            state = Const.STATE_MOVE;
+        }
 
+        pc.send(angle, this.side);
+        super.shoot();
+        hasBall = false;
+        // changement d'état pour recalculer les mouvements.
+        state = Const.STATE_MOVE;
+    }
+
+    /**
+     * Prépare le lancement de la balle. Effectue le lancer lorsque l'angle à atteindre est atteint.
+     */
     public void prepareShot() {
         cooldownShoot--;
         if(angle != angleToGet) {
@@ -195,20 +224,19 @@ public class IA extends Player {
                     turnRight();
                 }
             }
-
-
-//
         }
+
         if(cooldownShoot <= 0 && canShoot) {
             if(angle == angleToGet) {
-                cooldownShoot = ThreadLocalRandom.current().nextInt(CD_SHOOT_MAX - CD_SHOOT_MAX_OFFSET, CD_SHOOT_MAX + CD_SHOOT_MAX_OFFSET);
-                pc.send(angle, this.side);
-                shoot();
-                hasBall = false;
+                // changement d'état pour lancer la balle.
+                state = Const.STATE_SHOOT;
             }
         }
     }
 
+    /**
+     * Déplace le joueur vers la balle.
+     */
     private void goToBall() {
         if(this.x > pc.getX()) {
             moveLeft();
@@ -217,7 +245,10 @@ public class IA extends Player {
         }
     }
 
-    private void    dodgeBall() {
+    /**
+     * Eloigne le joueur de la position finale de la balle.
+     */
+    private void dodgeBall() {
         // f(x) = ax + b = teamHeight
         int heightToGet;
         if(this.side == Const.SIDE_BOT) {
@@ -226,6 +257,7 @@ public class IA extends Player {
             heightToGet = Const.HEIGHT_EQ2;
         }
 
+        // maths
         double xA = pc.getX();
         double yA = pc.getY();
 
@@ -248,35 +280,52 @@ public class IA extends Player {
     }
 
 
+    /**
+     * Déplace le joueur aléatoirement, esquivant la balle ou allant vers elle.
+     */
     public void move() {
-
-        if(canMove) {
-            if(pc.isStatic() && this.side == pc.getTeamfield() && pc.getHolder() == null) {
-                goToBall();
-            } else if(!pc.isStatic() && this.side != pc.getTeamfield()) {
-                dodgeBall();
-            } else {
-                if(dir) {
-                    moveLeft();
-                } else {
-                    moveRight();
-                }
-                cooldownMove--;
-            }
-            angleToGet = calculateAngle();
+        if(!this.isAlive) {
+            state = Const.STATE_DEAD;
+            return;
         }
 
-
+        if(pc.isStatic() && this.side == pc.getTeamfield() && pc.getHolder() == null) {
+            // balle arrêtée sur le terrain
+            goToBall();
+        } else if(!pc.isStatic() && this.side != pc.getTeamfield()) {
+            // balle en mouvement vers le terrain
+            dodgeBall();
+        } else {
+            if(dir) {
+                moveLeft();
+            } else {
+                moveRight();
+            }
+            cooldownMove--;
+        }
+        angleToGet = calculateAngle();
 
         // calcul de la prochaine direction où l'ia ira.
         if(cooldownMove <= 0) {
             cooldownMove = CD_MOVE;
             dir = ThreadLocalRandom.current().nextFloat() < 0.5;
         }
+
+        // dès que le joueur a la balle, il passe en état préparation du tir.
+        if(hasBall) state = Const.STATE_PREPARE_SHOOT;
     }
 
     public void setHasBall(boolean status) {
         hasBall = status;
-        cooldownShoot = ThreadLocalRandom.current().nextInt(CD_SHOOT_MAX - CD_SHOOT_MAX_OFFSET, CD_SHOOT_MAX + CD_SHOOT_MAX_OFFSET);
+        cooldownShoot = ThreadLocalRandom.current().nextInt(Const.CD_SHOOT_MAX - Const.CD_SHOOT_MAX_OFFSET, Const.CD_SHOOT_MAX + Const.CD_SHOOT_MAX_OFFSET);
+    }
+
+    public void kill() {
+        if(isAlive) {
+            isAlive = false;
+            sprite.playDie();
+            // changement d'état pour signifier la mort.
+            state = Const.STATE_DEAD;
+        }
     }
 }

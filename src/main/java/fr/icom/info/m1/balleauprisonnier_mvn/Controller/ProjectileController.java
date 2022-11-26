@@ -33,10 +33,6 @@ public class ProjectileController extends ObjectController {
         ((Projectile) model).setMoving(status);
     }
 
-    public void setStatic(boolean status) {
-        ((Projectile) model).setStatic(status);
-    }
-
     public void setStatic(boolean status, int position) {
         ((Projectile) model).setStatic(status, position);
     }
@@ -59,6 +55,10 @@ public class ProjectileController extends ObjectController {
 
     public void send(double angle, int sideSender) {
         ((Projectile) model).send(angle, sideSender);
+    }
+
+    public void setvX(double vX) {
+        ((Projectile) model).setvX(vX);
     }
 
     @Override

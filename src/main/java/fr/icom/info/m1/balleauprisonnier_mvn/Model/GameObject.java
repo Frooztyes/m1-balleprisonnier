@@ -3,10 +3,8 @@ package fr.icom.info.m1.balleauprisonnier_mvn.Model;
 public abstract class GameObject {
     protected double x;
     protected double y;
-
     protected double width;
     protected double height;
-
     protected double angle;
     protected double moveSpeed;
     protected double rotationSpeed;

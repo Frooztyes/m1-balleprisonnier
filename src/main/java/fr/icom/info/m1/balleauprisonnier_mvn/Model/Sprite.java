@@ -19,7 +19,7 @@ public class Sprite extends ImageView {
     private final Timeline shootTimeline;
     private final Timeline dieTimeline;
     private Timeline timeline;
-    public boolean isRunning;
+    private boolean isRunning;
 
     public Sprite(Image animationImage, Duration frameTime, int side) {
 
@@ -132,5 +132,9 @@ public class Sprite extends ImageView {
 
     public double getCellSize() {
         return 64;
+    }
+
+    public boolean isRunning() {
+        return isRunning;
     }
 }
