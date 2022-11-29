@@ -11,7 +11,10 @@ public class ProjectileController extends ObjectController {
     }
 
     public static ProjectileController Instantiate(Projectile model, ProjectileView view) {
-        return instance = new ProjectileController(model, view);
+        if(instance == null) {
+            instance = new ProjectileController(model, view);
+        }
+        return instance;
     }
     public void setHolder(PlayerController p) {
         ((Projectile) model).setHolder(p);

@@ -6,7 +6,7 @@ import java.awt.*;
  * Classe de constantes
  */
 public final class Const {
-    public static final Dimension SCREEN_DIM    = new Dimension(800, 600);
+    public static final Dimension SCREEN_DIM    = new Dimension(800, 500);
 
     public static final Dimension FIELD_DIM     = new Dimension((int) (SCREEN_DIM.width * 0.7), SCREEN_DIM.height);
     public static final int OFFSET_FIELD        = 20;
