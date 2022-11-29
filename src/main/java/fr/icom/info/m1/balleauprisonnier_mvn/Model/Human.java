@@ -1,24 +1,39 @@
-package fr.icom.info.m1.balleauprisonnier_mvn;
+package fr.icom.info.m1.balleauprisonnier_mvn.Model;
 
-import javafx.scene.canvas.GraphicsContext;
-
+import fr.icom.info.m1.balleauprisonnier_mvn.Controller.ProjectileController;
+import javafx.scene.image.Image;
 import java.util.ArrayList;
 
 public class Human extends Player {
-
-    Human(GraphicsContext gc, String color, int xInit, int yInit, int side, double moveSpeed) {
-        super(gc, color, xInit, yInit, side, moveSpeed);
+    private final int indice;
+    public Human(int xInit, int yInit, int side, double moveSpeed, ProjectileController ball, Image image, int indice) {
+        super(xInit, yInit, side, moveSpeed, ball, image);
+        this.indice = indice;
     }
 
+    /**
+     * Envoie la balle selon un angle et modifie le sprite du joueur.
+     */
     @Override
     public void shoot() {
-        if(ball == null) return;
-        ball.send(angle, this.side);
-        ball = null;
+        if(!hasBall) return;
+        pc.send(angle, this.side);
+        hasBall = false;
         sprite.playShoot();
     }
 
-    public void Animate(ArrayList<String> input, int indice) {
+    @Override
+    public void update() { }
+
+    public void update(ArrayList<String> input) {
+        Animate(input);
+    }
+
+    /**
+     * Déplace le joueur selon l'entrée clavier (relative à l'indice du joueur) et uniquement s'il est en vie.
+     * Prends aussi en compte le lancement de la balle.
+     */
+    public void Animate(ArrayList<String> input) {
         if(!this.isAlive) return;
 
         if (indice==0 && input.contains("LEFT"))
@@ -61,7 +76,5 @@ public class Human extends Player {
         {
             this.shoot();
         }
-        if(ball != null) System.out.println(angle);
-        this.display();
     }
 }

@@ -1,25 +1,34 @@
-package fr.icom.info.m1.balleauprisonnier_mvn;
+package fr.icom.info.m1.balleauprisonnier_mvn.Model;
 
-import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.image.Image;
-import javafx.scene.transform.Rotate;
+import fr.icom.info.m1.balleauprisonnier_mvn.Const;
+import fr.icom.info.m1.balleauprisonnier_mvn.Controller.PlayerController;
+
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Projectile extends GameObject {
-
     private int teamField;
     private boolean isMoving;
     private boolean isStatic;
-    private static Projectile instance;
+    private double rotation;
+    private double vX;
+    private double vY;
+    private PlayerController holder;
 
-    private Projectile(GraphicsContext gc, double angle, double speed, double x, double y, int initialDirection) {
-        super(gc, angle, speed, 5, new Image("assets/ball.png"));
-        this.width = image.getWidth();
-        this.height = image.getHeight();
+    public Projectile(double angle, double speed, double x, double y, int initialDirection, double width, double height) {
+        super(angle, speed, 5);
+        if(ThreadLocalRandom.current().nextFloat() < 0.5) {
+            initialDirection = -1;
+        } else {
+            initialDirection = 1;
+        }
+        angle = ThreadLocalRandom.current().nextInt(60, 240);
+        this.width = width;
+        this.height = height;
         this.x = x - width/2;
         this.y = y - height/2;
         isStatic = false;
         rotation = 0;
-
+        this.moveSpeed = 5;
 
         double radAngle = Math.toRadians(angle);
         if(initialDirection == -1) {
@@ -32,26 +41,9 @@ public class Projectile extends GameObject {
         }
     }
 
-    public static Projectile Instantiate(GraphicsContext gc, double angle, double speed, double x, double y, int initialDirection) {
-        if(instance == null) {
-            instance = new Projectile(gc, angle, speed, x, y, initialDirection);
-        }
-        return instance;
-    }
-
-    public static Projectile getInstance() {
-        return instance;
-    }
-
-    private double rotation;
-    private double vX;
-    private double vY;
-
-    public static double roundAvoid(double value, int places) {
-        double scale = Math.pow(10, places);
-        return Math.round(value * scale) / scale;
-    }
-
+    /**
+     * envoie la balle selon l'angle et effectue les modifications relatives à la position du lanceur.
+     */
     public void send(double angle, int sideSender) {
         if(holder == null) return;
 
@@ -69,6 +61,10 @@ public class Projectile extends GameObject {
         this.holder = null;
     }
 
+    /**
+     * Déplace la balle sur le joueur quand il l'a porte
+     * Déplace la balle si elle est en mouvement.
+     */
     void move() {
         if(holder != null) {
             setAt(holder.getX(), holder.getY());
@@ -79,8 +75,16 @@ public class Projectile extends GameObject {
         }
     }
 
-    private Player holder;
-    public void setHolder(Player p) {
+    /**
+     * Met à jour la position de la balle (et rotation sur elle-même)
+     */
+    public void update() {
+        move();
+        if(!isStatic && holder == null) rotation += rotationSpeed;
+        if(rotation >= 360) rotation = 0;
+    }
+
+    public void setHolder(PlayerController p) {
         holder = p;
     }
 
@@ -94,28 +98,20 @@ public class Projectile extends GameObject {
         teamField = position;
     }
 
-    public int getTeamField() {
+    public int getTeamfield() {
         return teamField;
     }
 
-    void display()
-    {
-        move();
-        graphicsContext.save(); // saves the current state on stack, including the current transform
-        if(!isStatic && holder == null) rotation += rotationSpeed;
-        if(rotation >= 360) rotation = 0;
-        rotate(graphicsContext, angle + rotation, x + image.getWidth() / 2, y + image.getHeight() / 2);
-        graphicsContext.drawImage(image, x, y);
-        graphicsContext.restore(); // back to original state (before rotation)
+
+    public double getRotation() {
+        return rotation;
     }
 
-
-
-    public boolean getStatic() {
+    public boolean isStatic() {
         return isStatic;
     }
 
-    public Player getHolder() {
+    public PlayerController getHolder() {
         return this.holder;
     }
 
@@ -133,11 +129,19 @@ public class Projectile extends GameObject {
         teamField = position;
     }
 
+    public void setvX(double vX) {
+        this.vX = vX;
+    }
+
     public double getvX() {
         return vX;
     }
 
     public double getvY() {
         return vY;
+    }
+
+    public void setSpeed(double doubleValue) {
+        moveSpeed = doubleValue;
     }
 }

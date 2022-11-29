@@ -1,30 +1,27 @@
-package fr.icom.info.m1.balleauprisonnier_mvn;
+package fr.icom.info.m1.balleauprisonnier_mvn.Model;
 
+import fr.icom.info.m1.balleauprisonnier_mvn.Const;
 import javafx.animation.*;
 import javafx.beans.property.*;
 import javafx.geometry.*;
 import javafx.scene.image.*;
 import javafx.util.Duration;
 
-import java.util.Objects;
-
-class Sprite extends ImageView {
+public class Sprite extends ImageView {
     private final Rectangle2D[] walkClips;
     private final Rectangle2D[] shootClips;
     private final Rectangle2D[] dieClips;
-    private int numCells;
-    private int numCellsWalk;
-    private int numCellsShoot;
-    private int numCellsDie;
+    private final int numCellsWalk;
+    private final int numCellsShoot;
+    private final int numCellsDie;
     private final Timeline walkTimeline;
     private final IntegerProperty frameCounter = new SimpleIntegerProperty(0);
     private final Timeline shootTimeline;
     private final Timeline dieTimeline;
     private Timeline timeline;
-    public boolean isRunning;
+    private boolean isRunning;
 
-    public Sprite(Image animationImage, int numCells, int numRows, Duration frameTime, int side) {
-        this.numCells = numCells;
+    public Sprite(Image animationImage, Duration frameTime, int side) {
 
 
         double cellWidth  = 64;//animationImage.getWidth() / numCells; //64x64
@@ -135,5 +132,9 @@ class Sprite extends ImageView {
 
     public double getCellSize() {
         return 64;
+    }
+
+    public boolean isRunning() {
+        return isRunning;
     }
 }
