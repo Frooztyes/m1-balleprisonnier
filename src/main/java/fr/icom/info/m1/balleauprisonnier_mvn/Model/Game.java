@@ -7,22 +7,29 @@ import fr.icom.info.m1.balleauprisonnier_mvn.Controller.PlayerController;
 import fr.icom.info.m1.balleauprisonnier_mvn.Controller.ProjectileController;
 import fr.icom.info.m1.balleauprisonnier_mvn.View.PlayerView;
 import fr.icom.info.m1.balleauprisonnier_mvn.View.ProjectileView;
+import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Game extends GameObject {
-    public static boolean isPause = false;
+    public boolean isPause = false;
     private int equipeBall;
     private Field field;
     private List<PlayerController> equipe1;
@@ -35,6 +42,8 @@ public class Game extends GameObject {
     private final int width;
     private final int height;
     private final Stage stage;
+
+    private Label victoryLabel;
     public Game(Stage stage, int width, int height) {
         super(0, 0, 0);
         this.stage = stage;
@@ -43,6 +52,26 @@ public class Game extends GameObject {
 
         generateScene();
     }
+
+    public boolean isFinish() {
+        AtomicInteger countAliveEq1 = new AtomicInteger();
+        AtomicInteger countAliveEq2 = new AtomicInteger();
+        equipe1.forEach((PlayerController e) -> {
+            int _ = (e.isAlive()) ? countAliveEq1.getAndIncrement() : 0;
+        });
+        equipe2.forEach((PlayerController e) -> {
+            int _ = (e.isAlive()) ? countAliveEq2.getAndIncrement() : 0;
+        });
+        if(countAliveEq1.intValue() == 0) {
+            victoryLabel.setText("Victoire de l'équipe 2 !");
+        }
+        if(countAliveEq2.intValue() == 0) {
+            victoryLabel.setText("Victoire de l'équipe 1 !");
+
+        }
+        return countAliveEq1.intValue() <= 0 && countAliveEq2.intValue() <= 0;
+    }
+
 
     private PlayerController generatePlayer(int nbEq, int height, boolean isHuman, int index, int side) {
         PlayerController pc;
@@ -214,10 +243,11 @@ public class Game extends GameObject {
 
 
     /**
-     * Génère le bouton pause.
+     * Génère le panneau de droite avec bouton, texte et slider.
      */
-    private void generateButton(StackPane canvas) {
+    private void generateSidePanel(StackPane canvas) {
         GridPane gp = new GridPane();
+        gp.setAlignment(Pos.TOP_CENTER);
 
         Button pauseButton = new Button();
         pauseButton.setPrefSize(48*3, 48);
@@ -227,22 +257,77 @@ public class Game extends GameObject {
         pauseButton.setGraphic(imgPlay);
 
         pauseButton.setOnAction(actionEvent -> {
-            Game.isPause = !Game.isPause;
-            if(Game.isPause) pauseButton.setGraphic(imgPause);
+            isPause = !isPause;
+            if(isPause) pauseButton.setGraphic(imgPause);
             else pauseButton.setGraphic(imgPlay);
         });
+        GridPane.setHalignment(pauseButton, HPos.CENTER);
+        GridPane.setConstraints(pauseButton, 0, 3); // col = 0 ; row = 2
 
-        gp.setAlignment(Pos.BOTTOM_CENTER);
-        GridPane.setMargin(pauseButton, new Insets(
+        Label label = new Label("BALLE AU PRISONNIER");
+        label.setFont(new Font(20));
+        label.setStyle("-fx-font-weight: bold");
+        label.setTextAlignment(TextAlignment.CENTER);
+        label.setAlignment(Pos.CENTER);
+//        label.setStyle("-fx-background-color: #000000;");
+
+        GridPane.setMargin(label, new Insets(
+                (Const.SCREEN_DIM.width - Const.FIELD_DIM.width) * 0.1,
+                0,
+                (Const.SCREEN_DIM.width - Const.FIELD_DIM.width) * 0.1,
+                0
+        ));
+        GridPane.setHalignment(label, HPos.CENTER);
+        GridPane.setConstraints(label, 0, 0);
+
+        Text text = new Text();
+        text.setFont(new Font(15));
+        text.setText("Joueur haut : \nZ, Q, S et D pour se déplacer \n A pour tirer\n\n" +
+                "Joueur bas : \n↑, ←, ↓ et → pour le joueur bas\n Numpad0 pour tirer\n\nVitesse de la balle : ");
+
+        GridPane.setMargin(text, new Insets(
                 (Const.SCREEN_DIM.width - Const.FIELD_DIM.width) * 0.1,
                 (Const.SCREEN_DIM.width - Const.FIELD_DIM.width) * 0.1,
                 (Const.SCREEN_DIM.width - Const.FIELD_DIM.width) * 0.1,
                 (Const.SCREEN_DIM.width - Const.FIELD_DIM.width) * 0.1
         ));
-        GridPane.setConstraints(pauseButton, 0, 0);
+        GridPane.setConstraints(text, 0, 1);
+
+        Slider slider = new Slider(1, 10, 1);
+        slider.adjustValue(5);
+
+        slider.setShowTickMarks(true);
+        slider.setShowTickLabels(true);
+        slider.setMajorTickUnit(0.25f);
+        slider.setBlockIncrement(0.1f);
+
+        slider.valueProperty().addListener((observableValue, number, t1) -> ball.setSpeed(number.doubleValue()));
+        GridPane.setMargin(slider, new Insets(
+                0,
+                (Const.SCREEN_DIM.width - Const.FIELD_DIM.width) * 0.1,
+                (Const.SCREEN_DIM.width - Const.FIELD_DIM.width) * 0.1,
+                (Const.SCREEN_DIM.width - Const.FIELD_DIM.width) * 0.1
+        ));
+        slider.setFocusTraversable(false);
+        GridPane.setConstraints(slider, 0, 2);
+
+        victoryLabel = new Label("");
+        victoryLabel.setFont(new Font(20));
+        victoryLabel.setStyle("-fx-font-weight: bold");
+        victoryLabel.setTextAlignment(TextAlignment.CENTER);
+        victoryLabel.setAlignment(Pos.CENTER);
+
+        GridPane.setMargin(victoryLabel, new Insets(
+                (Const.SCREEN_DIM.width - Const.FIELD_DIM.width) * 0.1,
+                0,
+                (Const.SCREEN_DIM.width - Const.FIELD_DIM.width) * 0.1,
+                0
+        ));
+        GridPane.setHalignment(victoryLabel, HPos.CENTER);
+        GridPane.setConstraints(victoryLabel, 0, 5);
 
 
-        gp.getChildren().addAll( pauseButton);
+        gp.getChildren().addAll( pauseButton, label, text, slider, victoryLabel);
         canvas.getChildren().add(gp);
     }
 
@@ -262,7 +347,7 @@ public class Game extends GameObject {
         canvas.setPrefSize(Const.SCREEN_DIM.width - Const.FIELD_DIM.width,Const.SCREEN_DIM.height);
         GridPane.setConstraints(canvas, 2, 0);
 
-        generateButton(canvas);
+        generateSidePanel(canvas);
 
         // On cree le terrain de jeu et on l'ajoute a la racine de la scene
         field = new Field(Const.FIELD_DIM.width, Const.FIELD_DIM.height);
@@ -278,6 +363,7 @@ public class Game extends GameObject {
 
         root.getChildren().add(gridpane);
 
+
         for(PlayerController p : this.equipe1) {
             root.getChildren().add(p.getSprite());
         }
@@ -289,6 +375,10 @@ public class Game extends GameObject {
         // On ajoute la scene a la fenetre et on affiche
         stage.setScene(scene);
         stage.show();
+    }
+
+    public Field getField() {
+        return field;
     }
 
     public List<PlayerController> getEquipe1() {
@@ -309,6 +399,10 @@ public class Game extends GameObject {
 
     public GraphicsContext getGraphicsContext() {
         return gc;
+    }
+
+    public boolean isPause() {
+        return isPause;
     }
 
     @Override

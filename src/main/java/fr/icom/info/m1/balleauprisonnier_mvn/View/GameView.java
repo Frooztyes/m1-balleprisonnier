@@ -18,7 +18,11 @@ public class GameView extends ViewObject {
         // On nettoie le canvas à chaque frame
         graphicsContext.setFill(Color.LIGHTGRAY);
 
-        graphicsContext.fillRect(0, 0, Const.FIELD_DIM.width, Const.FIELD_DIM.height + Const.OFFSET_FIELD);
+        graphicsContext.fillRect( 0,
+                0,
+                Const.FIELD_DIM.width,
+                Const.FIELD_DIM.height + Const.OFFSET_FIELD
+        );
 
         // Déplacement et affichage des joueurs
         handleInputs(equipe1, equipe2, input, ball);

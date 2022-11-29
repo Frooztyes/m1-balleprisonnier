@@ -20,8 +20,10 @@ public class GameController extends ObjectController {
         {
             public void handle(long currentNanoTime)
             {
-                if(Game.isPause) return;
+                ;
+                if(((Game) model).isPause() || ((Game) model).isFinish()) return;
                 updateView();
+                ((Game) model).getField().requestFocus();
             }
         }.start();
     }

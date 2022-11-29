@@ -3,6 +3,8 @@ package fr.icom.info.m1.balleauprisonnier_mvn.Model;
 import fr.icom.info.m1.balleauprisonnier_mvn.Const;
 import fr.icom.info.m1.balleauprisonnier_mvn.Controller.PlayerController;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 public class Projectile extends GameObject {
     private int teamField;
     private boolean isMoving;
@@ -14,12 +16,19 @@ public class Projectile extends GameObject {
 
     public Projectile(double angle, double speed, double x, double y, int initialDirection, double width, double height) {
         super(angle, speed, 5);
+        if(ThreadLocalRandom.current().nextFloat() < 0.5) {
+            initialDirection = -1;
+        } else {
+            initialDirection = 1;
+        }
+        angle = ThreadLocalRandom.current().nextInt(60, 240);
         this.width = width;
         this.height = height;
         this.x = x - width/2;
         this.y = y - height/2;
         isStatic = false;
         rotation = 0;
+        this.moveSpeed = 5;
 
         double radAngle = Math.toRadians(angle);
         if(initialDirection == -1) {
@@ -130,5 +139,9 @@ public class Projectile extends GameObject {
 
     public double getvY() {
         return vY;
+    }
+
+    public void setSpeed(double doubleValue) {
+        moveSpeed = doubleValue;
     }
 }

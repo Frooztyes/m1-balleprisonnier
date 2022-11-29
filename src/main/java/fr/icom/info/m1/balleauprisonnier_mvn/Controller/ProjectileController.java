@@ -11,12 +11,8 @@ public class ProjectileController extends ObjectController {
     }
 
     public static ProjectileController Instantiate(Projectile model, ProjectileView view) {
-        if(instance == null) {
-            instance = new ProjectileController(model, view);
-        }
-        return instance;
+        return instance = new ProjectileController(model, view);
     }
-
     public void setHolder(PlayerController p) {
         ((Projectile) model).setHolder(p);
     }
@@ -61,6 +57,9 @@ public class ProjectileController extends ObjectController {
         ((Projectile) model).setvX(vX);
     }
 
+    public void setSpeed(double doubleValue) {
+        ((Projectile) model).setSpeed(doubleValue);
+    }
     @Override
     public void updateView() {
         model.update();
